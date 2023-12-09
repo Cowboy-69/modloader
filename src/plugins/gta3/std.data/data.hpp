@@ -51,6 +51,75 @@ using maybe_readable = maybe<maybe<StoreType>>;
 class DataPlugin : public modloader::basic_plugin
 {
     public: // Mod Loader Callbacks
+        // re3 stuff
+        uint32_t gtadat; // Hash for gta3.dat
+        uint32_t defaultdat; // Hash for default.dat
+        uint32_t carcolsdat; // Hash for carcols.dat
+        uint32_t pedgrpdat; // Hash for pedgrp.dat
+        uint32_t cullzonedat; // Hash for cullzone.dat
+        uint32_t fistfitedat; // Hash for fistfite.dat
+        uint32_t handlingcfg; // Hash for handling.cfg
+        uint32_t peddat; // Hash for ped.dat
+        uint32_t objectdat; // Hash for object.dat
+        uint32_t pedstatsdat; // Hash for pedstats.dat
+        uint32_t weapondat; // Hash for weapon.dat
+        uint32_t particlecfg; // Hash for particle.cfg
+        uint32_t surfacedat; // Hash for surface.dat
+        uint32_t timecycdat; // Hash for timecyc.dat
+        uint32_t waterprodat; // Hash for waterpro.dat
+        uint32_t flightdat; // Hash for flight.dat
+        uint32_t flight2dat; // Hash for flight2.dat
+        uint32_t flight3dat; // Hash for flight3.dat
+        uint32_t flight4dat; // Hash for flight4.dat
+        uint32_t tracksdat; // Hash for tracks.dat
+        uint32_t tracks2dat; // Hash for tracks2.dat
+        modloader::file_overrider gtadat_detour;
+        modloader::file_overrider defaultdat_detour;
+        modloader::file_overrider carcolsdat_detour;
+        modloader::file_overrider pedgrpdat_detour;
+        modloader::file_overrider cullzonedat_detour;
+        modloader::file_overrider fistfitedat_detour;
+        modloader::file_overrider handlingcfg_detour;
+        modloader::file_overrider peddat_detour;
+        modloader::file_overrider objectdat_detour;
+        modloader::file_overrider pedstatsdat_detour;
+        modloader::file_overrider weapondat_detour;
+        modloader::file_overrider particlecfg_detour;
+        modloader::file_overrider surfacedat_detour;
+        modloader::file_overrider timecycdat_detour;
+        modloader::file_overrider waterprodat_detour;
+        modloader::file_overrider flightdat_detour;
+        modloader::file_overrider flight2dat_detour;
+        modloader::file_overrider flight3dat_detour;
+        modloader::file_overrider flight4dat_detour;
+        modloader::file_overrider tracksdat_detour;
+        modloader::file_overrider tracks2dat_detour;
+        std::map<std::string, const modloader::file*> ideFiles;
+        std::map<std::string, const modloader::file*> iplFiles;
+        modloader_re3_t* modloader_re3{};
+
+        static int32_t RE3Detour_OpenFile_GtaDat(const char* filename, const char* mode);
+        static int32_t RE3Detour_OpenFile_DefaultDat(const char* filename, const char* mode);
+        static int32_t RE3Detour_OpenFile_CarcolsDat(const char* filename, const char* mode);
+        static int32_t RE3Detour_OpenFile_PedGrpDat(const char* filename, const char* mode);
+        static int32_t RE3Detour_OpenFile_CullzoneDat(const char* filename, const char* mode);
+        static int32_t RE3Detour_OpenFile_WaterproDat(const char* filename, const char* mode);
+        static int RE3Detour_LoadFile_FistfiteDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_HandlingCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_PedDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_ObjectDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_PedStatsDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_WeaponDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_ParticleCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_SurfaceDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_TimecycDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_FlightDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_Flight2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_Flight3Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_Flight4Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_TracksDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int RE3Detour_LoadFile_Tracks2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static void RE3Detour_InitialiseGame();
 
         friend void ProcessGtaDatEntries();
 

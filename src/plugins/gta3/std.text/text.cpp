@@ -19,7 +19,8 @@ static const uint64_t is_fxt_mask = 0x0000000100000000;     // Mask for is_fxt o
 class TextPlugin : public modloader::basic_plugin
 {
     private:
-        std::map<uint32_t, const modloader::file*> gxt; // GXT Files Map<hash, file>
+        modloader_re3_t* modloader_re3{};
+
         modloader::fxt_manager fxt;                     // FXT Files Manager
 
         LoadFileDetour<0x6A0228> gxt_d1_gta3;           // CText::Load detour for GTA III
@@ -29,6 +30,8 @@ class TextPlugin : public modloader::basic_plugin
         void ReloadGXT();                               // Reload current language file
 
     public:
+        std::map<uint32_t, const modloader::file*> gxt; // GXT Files Map<hash, file>
+
          // Standard plugin methods
         const info& GetInfo();
         bool OnStartup();
@@ -53,12 +56,39 @@ const TextPlugin::info& TextPlugin::GetInfo()
     return xinfo;
 }
 
+const char* RegisterAndGetGxtFilePathRE3(const char* filepath)
+{
+    std::string filepathString = static_cast<std::string>(filepath);
+    auto filename = NormalizePath(filepathString.substr(GetLastPathComponent(filepathString)));
+    auto it = text_plugin.gxt.find(modloader::hash(filename, ::tolower));
+    auto halfpath = std::string(it != text_plugin.gxt.end() ? it->second->filepath() : "");
+    auto gamepath = std::string(text_plugin.loader->gamepath);
+
+    std::string fullpath;
+    if (!halfpath.empty()) {
+        fullpath.append(gamepath);
+        fullpath.append(halfpath);
+    }
+
+    static std::string static_result;
+    static_result = fullpath;
+    return static_result.empty() ? filepath : static_result.c_str();
+}
+
 /*
  *  TextPlugin::OnStartup
  *      Startups the plugin
  */
 bool TextPlugin::OnStartup()
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        text_plugin.modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+        text_plugin.modloader_re3->callback_table->RegisterAndGetGxtFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetGxtFilePathRE3(filepath);
+        };
+        return true;
+    }
+
     if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
     {
         this->fxt.make_samp_compatible();

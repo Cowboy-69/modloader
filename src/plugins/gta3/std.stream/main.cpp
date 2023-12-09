@@ -18,6 +18,10 @@ static bool ShouldIgnoreFile(const modloader::file&);
 class ThePlugin : public modloader::basic_plugin
 {
     private:
+        // re3 stuff
+        modloader_re3_t* modloader_re3{};
+        static int32_t RE3Detour_OpenFile_PedIfp(const char*, const char*);
+
         file_overrider ov_ped_ifp;
 
     public:
@@ -30,8 +34,8 @@ class ThePlugin : public modloader::basic_plugin
         bool UninstallFile(const modloader::file&);
         void Update();
 
-} plugin;
-REGISTER_ML_PLUGIN(::plugin);
+} the_plugin;
+REGISTER_ML_PLUGIN(::the_plugin);
 
 
 /*
@@ -47,7 +51,64 @@ const ThePlugin::info& ThePlugin::GetInfo()
 
 
 
+class OpenFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int32_t(const char*, const char*)>;
+    using functor_type = std::function<int32_t(func_type, const char*&, const char*&)>;
 
+    functor_type functor;
+
+    OpenFileSB() = default;
+    OpenFileSB(const OpenFileSB&) = delete;
+    OpenFileSB(OpenFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    OpenFileSB& operator=(const OpenFileSB&) = delete;
+    OpenFileSB& operator=(OpenFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~OpenFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+    OpenFileSB,
+    int32_t, const char*, const char*>;
+
+int32_t ThePlugin::RE3Detour_OpenFile_PedIfp(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *the_plugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = the_plugin.ov_ped_ifp;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
 
 /*
  *  ThePlugin::OnStartup
@@ -63,7 +124,14 @@ bool ThePlugin::OnStartup()
         streaming->InitRefreshInterface(); // TODO move to ctor?
 
         // Setup ped.ifp overrider
-        if(gvm.IsIII())
+        if (loader->game_id == MODLOADER_GAME_RE3)
+        {
+            modloader_re3 = (modloader_re3_t*)loader->FindSharedData("MODLOADER_RE3")->p;
+            modloader_re3->callback_table->OpenFile_PedIfp = RE3Detour_OpenFile_PedIfp;
+            ov_ped_ifp.SetParams(file_overrider::params(nullptr));
+            ov_ped_ifp.SetFileDetour(OpenFileDetourRE3());
+        }
+        else if(gvm.IsIII())
         {
             ov_ped_ifp.SetParams(file_overrider::params(nullptr));
             ov_ped_ifp.SetFileDetour(Gta3LoadIfpDetour<xIII(0x4038FC)>());

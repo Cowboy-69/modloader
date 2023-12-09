@@ -9,6 +9,11 @@ typedef struct {
     int* p_gGameState;
 
     void (*PlayMovieInWindow)(int, const char*);
+    int32_t (*CFileMgr_OpenFile)(const char* file, const char* mode);
+    int (*CFileMgr_LoadFile)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    bool (*CTxdStore_LoadTxd)(int slot, const char* filename);
+    void* (*CFileLoader_LoadAtomicFile2Return)(const char* filename);
+    void (*InitialiseGame)();
 
     void* ms_aInfoForModel;
     uint32_t uMaxResources;
@@ -28,6 +33,14 @@ typedef struct {
     void (*LoadCdDirectoryUsingCallbacks)(void* pUserData, int n, bool (*ReadEntry)(void*, void*, uint32_t),
         bool (*RegisterEntry)(void*, void*, bool), void (*RegisterSpecialEntry)(void*, void*));
 
+    void (*CTimer__Resume)();
+    void (*CTimer__Suspend)();
+    void (*CStreaming__FlushChannels)();
+    void (*CStreaming__RequestModel)(int32_t id, int32_t flags);
+    void (*CStreaming__RemoveModel)(int32_t id);
+    void (*CStreaming__LoadAllRequestedModels)(bool priority);
+    void (*CStreaming__RemoveAllUnusedModels)();
+    bool (*CStreaming__RemoveLeastUsedModel)();
 
 } modloader_re3_addr_table_t;
 
@@ -37,6 +50,40 @@ typedef struct {
 
     void (*PlayMovieInWindow_Logo)(int, const char*);
     void (*PlayMovieInWindow_GTAtitles)(int, const char*);
+    int32_t (*OpenFile_GtaDat)(const char* file, const char* mode);
+    int32_t (*OpenFile_DefaultDat)(const char* file, const char* mode);
+    int32_t (*OpenFile_CarcolsDat)(const char* file, const char* mode);
+    int32_t (*OpenFile_PedGrpDat)(const char* file, const char* mode);
+    int32_t (*OpenFile_CullzoneDat)(const char* file, const char* mode);
+    int32_t (*OpenFile_MainScm)(const char* file, const char* mode);
+    int32_t (*OpenFile_WaterproDat)(const char* file, const char* mode);
+    int32_t (*OpenFile_PedIfp)(const char* file, const char* mode);
+    int (*LoadFile_FistfiteDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_HandlingCfg)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_PedDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_ObjectDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_PedStatsDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_WeaponDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_ParticleCfg)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_SurfaceDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_TimecycDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_FlightDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_Flight2Dat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_Flight3Dat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_Flight4Dat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_TracksDat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    int (*LoadFile_Tracks2Dat)(const char* file, uint8_t* buf, int maxlen, const char* mode);
+    bool (*LoadTxd_FontsTxd)(int slot, const char* filename);
+    bool (*LoadTxd_FontsPTxd)(int slot, const char* filename);
+    bool (*LoadTxd_FontsRTxd)(int slot, const char* filename);
+    bool (*LoadTxd_FontsJTxd)(int slot, const char* filename);
+    bool (*LoadTxd_FrontendTxd)(int slot, const char* filename);
+    bool (*LoadTxd_HudTxd)(int slot, const char* filename);
+    bool (*LoadTxd_MenuTxd)(int slot, const char* filename);
+    bool (*LoadTxd_ParticleTxd)(int slot, const char* filename);
+    void* (*LoadAtomic2Return_ArrowDff)(const char* filename);
+    void* (*LoadAtomic2Return_ZonecylbDff)(const char* filename);
+    void (*InitialiseGame)();
 
     void (*CdStreamThread)();
     void (*LoadCdDirectory0)();
@@ -54,6 +101,11 @@ typedef struct {
     const char* (*RegisterAndGetClumpFile_Unsafe)(const char* filepath);
     const char* (*RegisterAndGetTexDiction_Unsafe)(const char* filepath);
     const char* (*RegisterAndGetColFile_Unsafe)(const char* filepath);
+    const char* (*RegisterAndGetIdeFile_Unsafe)(const char* filepath);
+    const char* (*RegisterAndGetIplFile_Unsafe)(const char* filepath);
+    const char* (*RegisterAndGetGxtFile_Unsafe)(const char* filepath);
+    const char* (*RegisterAndGetPlayerBmpFile_Unsafe)(const char* filepath);
+    const char* (*RegisterAndGetSplashFile_Unsafe)(const char* filepath);
 
 } modloader_re3_callback_table_t;
 

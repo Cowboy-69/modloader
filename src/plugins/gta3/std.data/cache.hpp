@@ -126,13 +126,18 @@ class data_cache : public modloader::basic_cache
                 if(get<0>(this->AddCacheFile("_STARTUP_", false)) != -1     // Creates /0/ directory
                 && get<0>(this->AddCacheFile("_STARTUP_", true)) != -1)     // Creates /1/ directory
                 {
-                    // Setup a hook to delete the not used cache files after the loading screen, so we don't keep trash in there
-                    using initialise_hook = injector::function_hooker<0x748CFB, void()>;
-                    injector::make_static_hook<initialise_hook>([this](initialise_hook::func_type InitialiseGame)
-                    {
-                        InitialiseGame();
-                        this->DeleteUnusedCaches();
-                    });
+                    using modloader::plugin_ptr;
+                    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+                        // Moved to DataPlugin::RE3Detour_InitialiseGame
+                    } else {
+                        // Setup a hook to delete the not used cache files after the loading screen, so we don't keep trash in there
+                        using initialise_hook = injector::function_hooker<0x748CFB, void()>;
+                        injector::make_static_hook<initialise_hook>([this](initialise_hook::func_type InitialiseGame)
+                        {
+                            InitialiseGame();
+                            this->DeleteUnusedCaches();
+                        });
+                    }
                     return true;
                 }
             }
@@ -509,6 +514,8 @@ class data_cache : public modloader::basic_cache
             });
             return result;
         }
+
+    public:
 
         // Deletes unused cache files left in the cache directory (i.e. garbage old caches)
         // This in fact just deletes the cache files that weren't used in the current session

@@ -149,12 +149,63 @@ using xxxgrp_store = gta3::data_store<Traits, std::map<
                         typename Traits::key_type, typename Traits::value_type
                         >>;
 
+class OpenFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int32_t(const char*, const char*)>;
+    using functor_type = std::function<int32_t(func_type, const char*&, const char*&)>;
+
+    functor_type functor;
+
+    OpenFileSB() = default;
+    OpenFileSB(const OpenFileSB&) = delete;
+    OpenFileSB(OpenFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    OpenFileSB& operator=(const OpenFileSB&) = delete;
+    OpenFileSB& operator=(OpenFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~OpenFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+    OpenFileSB,
+    int32_t, const char*, const char*>;
 
 template<class Traits>
 static void initialise(DataPlugin* plugin_ptr, std::function<void()> refresher)
 {
     using store_type = xxxgrp_store<Traits>;
-    plugin_ptr->AddMerger<store_type>(Traits::dtraits::datafile(), true, false, false, reinstall_since_load, refresher);
+
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+        plugin_ptr->pedgrpdat = modloader::hash("pedgrp.dat");
+
+        plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+        plugin_ptr->modloader_re3->callback_table->OpenFile_PedGrpDat = plugin_ptr->RE3Detour_OpenFile_PedGrpDat;
+        plugin_ptr->pedgrpdat_detour.SetFileDetour(OpenFileDetourRE3());
+    } else {
+        plugin_ptr->AddMerger<store_type>(Traits::dtraits::datafile(), true, false, false, reinstall_since_load, refresher);
+    }
 }
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)

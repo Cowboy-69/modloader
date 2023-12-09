@@ -310,11 +310,38 @@ namespace datalib {
 
 static std::function<void()> MakeIdeReloader();
 
+const char* RegisterAndGetIdeFilePathRE3(const char* filepath)
+{
+    static std::string static_result;
+
+    std::string filepathString = static_cast<std::string>(filepath);
+    auto filename = NormalizePath(filepathString.substr(GetLastPathComponent(filepathString)));
+    
+    DataPlugin* dataPlugin = static_cast<DataPlugin*>(plugin_ptr);
+    auto it = dataPlugin->ideFiles.find(filename);
+    if (it != dataPlugin->ideFiles.end())
+    {
+        std::string fullpath = it->second->fullpath();
+        //dataPlugin->ideFiles.erase(it);
+        static_result = fullpath;
+    }
+
+    return static_result.empty() ? filepath : static_result.c_str();
+}
+
 // Object Types Merger
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
     // IDE Merger
-    if(gvm.IsSA())
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+        plugin_ptr->AddBehv(modloader::hash(ide_merger_name), true);
+
+        plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+        plugin_ptr->modloader_re3->callback_table->RegisterAndGetIdeFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetIdeFilePathRE3(filepath);
+        };
+    }
+    else if(gvm.IsSA())
     {
         plugin_ptr->AddMerger<ide_store>(ide_merger_name, false, false, true, reinstall_since_load, MakeIdeReloader());
     }

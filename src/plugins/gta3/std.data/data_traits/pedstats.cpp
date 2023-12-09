@@ -40,10 +40,60 @@ using pedstats_store = gta3::data_store<pedstats_traits, std::map<
                         pedstats_traits::key_type, pedstats_traits::value_type
                         >>;
 
+class LoadFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int(const char*, uint8_t*, int, const char*)>;
+    using functor_type = std::function<int(func_type, const char*&, uint8_t*&, int&, const char*&)>;
+
+    functor_type functor;
+
+    LoadFileSB() = default;
+    LoadFileSB(const LoadFileSB&) = delete;
+    LoadFileSB(LoadFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    LoadFileSB& operator=(const LoadFileSB&) = delete;
+    LoadFileSB& operator=(LoadFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~LoadFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+    LoadFileSB,
+    int, const char*, uint8_t*, int, const char*>;
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    auto ReloadPedStats = injector::cstd<void()>::call<0x5BB890>;
-    plugin_ptr->AddMerger<pedstats_store>("pedstats.dat", true, false, false, reinstall_since_start, gdir_refresh(ReloadPedStats));
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+        plugin_ptr->pedstatsdat = modloader::hash("pedstats.dat");
+
+        plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+        plugin_ptr->modloader_re3->callback_table->LoadFile_PedStatsDat = plugin_ptr->RE3Detour_LoadFile_PedStatsDat;
+        plugin_ptr->pedstatsdat_detour.SetFileDetour(LoadFileDetourRE3());
+    } else {
+        auto ReloadPedStats = injector::cstd<void()>::call<0x5BB890>;
+        plugin_ptr->AddMerger<pedstats_store>("pedstats.dat", true, false, false, reinstall_since_start, gdir_refresh(ReloadPedStats));
+    }
 });
 

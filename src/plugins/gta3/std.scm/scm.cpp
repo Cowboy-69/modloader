@@ -14,6 +14,12 @@ using namespace modloader;
 class ScmPlugin : public modloader::basic_plugin
 {
     private:
+        // re3 stuff
+        uint32_t mainscm; // Hash for main.scm
+        //file_overrider mainscm_detour;
+        modloader_re3_t* modloader_re3{};
+        static int32_t RE3Detour_OpenFile_MainScm(const char*, const char*);
+
         file_overrider overrider;
 
     public:
@@ -28,6 +34,65 @@ class ScmPlugin : public modloader::basic_plugin
 } scm_plugin;
 
 REGISTER_ML_PLUGIN(::scm_plugin);
+
+class OpenFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int32_t(const char*, const char*)>;
+    using functor_type = std::function<int32_t(func_type, const char*&, const char*&)>;
+
+    functor_type functor;
+
+    OpenFileSB() = default;
+    OpenFileSB(const OpenFileSB&) = delete;
+    OpenFileSB(OpenFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    OpenFileSB& operator=(const OpenFileSB&) = delete;
+    OpenFileSB& operator=(OpenFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~OpenFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+    OpenFileSB,
+    int32_t, const char*, const char*>;
+
+int32_t ScmPlugin::RE3Detour_OpenFile_MainScm(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *scm_plugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = scm_plugin.overrider;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
 
 /*
  *  ScmPlugin::GetInfo
@@ -50,7 +115,16 @@ const ScmPlugin::info& ScmPlugin::GetInfo()
  */
 bool ScmPlugin::OnStartup()
 {
-    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        mainscm = modloader::hash("main.scm");
+
+        modloader_re3 = (modloader_re3_t*)loader->FindSharedData("MODLOADER_RE3")->p;
+        modloader_re3->callback_table->OpenFile_MainScm = RE3Detour_OpenFile_MainScm;
+        this->overrider.SetParams(file_overrider::params(true, true, true, true));
+        this->overrider.SetFileDetour(OpenFileDetourRE3());
+        return true;
+    }
+    else if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
     {
         this->overrider.SetParams(file_overrider::params(true, true, true, true));
         this->overrider.SetFileDetour(OpenFileDetour<0x468EC9>(), OpenFileDetour<0x489A4A>());

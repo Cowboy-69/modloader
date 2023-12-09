@@ -16,7 +16,7 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
     // (Notice '->' means "exactly pointing to"!!!!!)
     //
 
-    /*
+    
     // std.fx
     if(true)
     {
@@ -57,10 +57,10 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
 		map[0xBA6748] = 0x8F59D8;   // CMenuManager FrontEndMenuManager
 		map[0x573260] = 0x47A4D0;   // _ZN12CMenuManager33InitialiseChangedLanguageSettingsEv
         map[0x6A0050] = 0x52C5A0;   // _ZN5CText3GetEPKc
-    }*/
+    }
 
     // std.scm
-    /*if(true)
+    if(true)
     {
 		map[0x468EC9] = 0x438869;   // call    _ZN8CFileMgr8OpenFileEPKcS1_  ; "main.scm" @CTheScripts
 		map[0x489A4A] = 0x588E13;   // call    _ZN8CFileMgr8OpenFileEPKcS1_  ; "main.scm" @CRunningScript
@@ -143,16 +143,17 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
         // TODO X refresh.cpp map[0x4D6C30] = ;   // _Z32RpAnimBlendClumpGiveAssociationsP7RpClumpP21CAnimBlendAssociation //doesn't exist?
         // TODO X refresh.cpp map[0x4D6BE0] = ;   // _Z35RpAnimBlendClumpExtractAssociationsP7RpClump //doesn't exist?
         // TODO X refresh.cpp map[0x681810] = ;   // _ZNK12CTaskManager16GetTaskSecondaryEi //doesn't exist?
-        @@map[0x561A00] = 0x4AD370;   // _ZN6CTimer6ResumeEv
-        @@map[0x5619D0] = 0x4AD310;   // _ZN6CTimer7SuspendEv
-        @@map[0x4087E0] = 0x407EA0;   // _ZN10CStreaming12RequestModelEii
-        @@map[0x4089A0] = 0x408830;   // _ZN10CStreaming11RemoveModelEi
-        @@map[0x40EA10] = 0x40A440;   // _ZN10CStreaming22LoadAllRequestedModelsEb
-        @@map[0x40E460] = 0x40A610;   // _ZN10CStreaming13FlushChannelsEv
-        @@map[0x40CF80] = 0x408940;   // _ZN10CStreaming21RemoveAllUnusedModelsEv
-        @@map[0x40CFD0] = 0x4089B0;   // _ZN10CStreaming20RemoveLeastUsedModelEj
+        */
+        map[0x561A00] = modloader_re3->re3_addr_table->CTimer__Resume;   // _ZN6CTimer6ResumeEv
+        map[0x5619D0] = modloader_re3->re3_addr_table->CTimer__Suspend;   // _ZN6CTimer7SuspendEv
+        map[0x4087E0] = modloader_re3->re3_addr_table->CStreaming__RequestModel;   // _ZN10CStreaming12RequestModelEii
+        map[0x4089A0] = modloader_re3->re3_addr_table->CStreaming__RemoveModel;   // _ZN10CStreaming11RemoveModelEi
+        map[0x40EA10] = modloader_re3->re3_addr_table->CStreaming__LoadAllRequestedModels;   // _ZN10CStreaming22LoadAllRequestedModelsEb
+        map[0x40E460] = modloader_re3->re3_addr_table->CStreaming__FlushChannels;   // _ZN10CStreaming13FlushChannelsEv
+        map[0x40CF80] = modloader_re3->re3_addr_table->CStreaming__RemoveAllUnusedModels;   // _ZN10CStreaming21RemoveAllUnusedModelsEv
+        map[0x40CFD0] = modloader_re3->re3_addr_table->CStreaming__RemoveLeastUsedModel;   // _ZN10CStreaming20RemoveLeastUsedModelEj
+        /*
         @@map[xVc(0x59E2B0)] = 0x52D210; // _ZN11CAutomobile20SetupSuspensionLinesEv
-
         // Non streamed resources
         map[0x5B9188] = 0x4763B2 ;  // call    _ZN11CFileLoader17LoadCollisionFileEPKch
         map[0x5B91B0] = 0x4763E2;   // call    _ZN11CFileLoader14LoadAtomicFileEPKc
@@ -168,7 +169,7 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
         */
     }
 
-    /*
+    
     // std.data
     if(true)
     {
@@ -199,7 +200,7 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
         map[0x6F74BC] = 0x54F06D;   // call    _ZN6CTrain25ReadAndInterpretTrackFileEPcPP10CTrainNodePiPfi ; "tracks2.dat"
         //map[0x6F7496] = 0x;   // call    _ZN6CTrain25ReadAndInterpretTrackFileEPcPP10CTrainNodePiPfi ; "tracks3.dat" //doesn't exist
         //map[0x6F74E2] = 0x;   // call    _ZN6CTrain25ReadAndInterpretTrackFileEPcPP10CTrainNodePiPfi ; "tracks4.dat" //doesn't exist
-        map[0x748CFB] = 0x582E6C;   // call    _Z14InitialiseGamev
+        //map[0x748CFB] = modloader_re3->re3_addr_table->InitialiseGame;   // call    _Z14InitialiseGamev
         //map[0x590D2A] = 0x;   // mov     eax, 8Ch                                 ; 8Ch = Loading Screen Max Progress //doesn't exist
         //map[0x590D67] = 0x;   // cmp     eax, 8Ch                                 ; 8Ch = Loading Screen Max Progress //doesn't exist
         //map[0x5B906A] = 0x;   // call    _ZN11CFileLoader8LoadLineEi              ; @CFileLoader::LoadLevel -- loop begin //check 4764F8
@@ -237,5 +238,5 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
     if(true)
     {
         // Not available for III
-    }*/
+    }
 }

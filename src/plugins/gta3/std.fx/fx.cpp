@@ -159,6 +159,41 @@ class FxPlugin : public modloader::basic_plugin
         }
 
     public:
+        // re3 stuff
+        uint32_t fontstxd; // Hash for fonts.txd
+        uint32_t fontsptxd; // Hash for fonts_p.txd
+        uint32_t fontsrtxd; // Hash for fonts_r.txd
+        uint32_t fontsjtxd; // Hash for fonts_j.txd
+        uint32_t frontendtxd; // Hash for frontend.txd
+        uint32_t hudtxd; // Hash for hud.txd
+        uint32_t menutxd; // Hash for menu.txd
+        uint32_t particletxd; // Hash for particle.txd
+        uint32_t arrowdff; // Hash for arrow.dff
+        uint32_t zonecylbdff; // Hash for zonecylb.dff
+        modloader::file_overrider fontstxd_detour;
+        modloader::file_overrider fontsptxd_detour;
+        modloader::file_overrider fontsrtxd_detour;
+        modloader::file_overrider fontsjtxd_detour;
+        modloader::file_overrider frontendtxd_detour;
+        modloader::file_overrider hudtxd_detour;
+        modloader::file_overrider menutxd_detour;
+        modloader::file_overrider particletxd_detour;
+        modloader::file_overrider arrowdff_detour;
+        modloader::file_overrider zonecylbdff_detour;
+        const modloader::file* playerBmpFile;
+        modloader_re3_t* modloader_re3{};
+
+        static bool RE3Detour_LoadTxd_FontsTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_FontsPTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_FontsRTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_FontsJTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_FrontendTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_HudTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_MenuTxd(int slot, const char* filename);
+        static bool RE3Detour_LoadTxd_ParticleTxd(int slot, const char* filename);
+        static void* RE3Detour_LoadAtomicFile2Return_ArrowDff(const char* filename);
+        static void* RE3Detour_LoadAtomicFile2Return_ZonecylbDff(const char* filename);
+
         // Finds overrider for the file with the specified hash, rets null if not found
         file_overrider* FindOverrider(size_t hash)
         {
@@ -194,6 +229,262 @@ const FxPlugin::info& FxPlugin::GetInfo()
     return xinfo;
 }
 
+class LoadTxdSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<bool(int, const char*)>;
+    using functor_type = std::function<bool(func_type, int&, const char*&)>;
+
+    functor_type functor;
+
+    LoadTxdSB() = default;
+    LoadTxdSB(const LoadTxdSB&) = delete;
+    LoadTxdSB(LoadTxdSB&& rhs) : functor(std::move(rhs.functor)) {}
+    LoadTxdSB& operator=(const LoadTxdSB&) = delete;
+    LoadTxdSB& operator=(LoadTxdSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~LoadTxdSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+bool FxPlugin::RE3Detour_LoadTxd_FontsTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.fontstxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_FontsPTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.fontsptxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_FontsRTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.fontsrtxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_FontsJTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.fontsjtxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_FrontendTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.frontendtxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_HudTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.hudtxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_MenuTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.menutxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+bool FxPlugin::RE3Detour_LoadTxd_ParticleTxd(int slot, const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadTxd0 = modloader_re3.re3_addr_table->CTxdStore_LoadTxd;
+
+    auto& base_detour = fx_plugin.particletxd_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadTxdSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadTxd0, slot, filename);
+    }
+
+    return LoadTxd0(slot, filename);
+}
+
+using LoadTxdDetourRE3 = modloader::basic_file_detour<dtraits::LoadTxd,
+    LoadTxdSB,
+    bool, int, const char*>;
+
+class LoadAtomicFile2ReturnSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<void*(const char*)>;
+    using functor_type = std::function<void*(func_type, const char*&)>;
+
+    functor_type functor;
+
+    LoadAtomicFile2ReturnSB() = default;
+    LoadAtomicFile2ReturnSB(const LoadAtomicFile2ReturnSB&) = delete;
+    LoadAtomicFile2ReturnSB(LoadAtomicFile2ReturnSB&& rhs) : functor(std::move(rhs.functor)) {}
+    LoadAtomicFile2ReturnSB& operator=(const LoadAtomicFile2ReturnSB&) = delete;
+    LoadAtomicFile2ReturnSB& operator=(LoadAtomicFile2ReturnSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~LoadAtomicFile2ReturnSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+void* FxPlugin::RE3Detour_LoadAtomicFile2Return_ArrowDff(const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadAtomic0 = modloader_re3.re3_addr_table->CFileLoader_LoadAtomicFile2Return;
+
+    auto& base_detour = fx_plugin.arrowdff_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadAtomicFile2ReturnSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadAtomic0, filename);
+    }
+
+    return LoadAtomic0(filename);
+}
+
+void* FxPlugin::RE3Detour_LoadAtomicFile2Return_ZonecylbDff(const char* filename)
+{
+    const auto& modloader_re3 = *fx_plugin.modloader_re3;
+    const auto LoadAtomic0 = modloader_re3.re3_addr_table->CFileLoader_LoadAtomicFile2Return;
+
+    auto& base_detour = fx_plugin.zonecylbdff_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadAtomicFile2ReturnSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadAtomic0, filename);
+    }
+
+    return LoadAtomic0(filename);
+}
+
+using LoadAtomicFile2ReturnDetourRE3 = modloader::basic_file_detour<dtraits::LoadAtomic2Return,
+    LoadAtomicFile2ReturnSB,
+    void*, const char*>;
+
+const char* RegisterAndGetPlayerBmpFilePathRE3(const char* filepath)
+{
+    std::string filepathString = static_cast<std::string>(filepath);
+    auto filename = NormalizePath(filepathString.substr(GetLastPathComponent(filepathString)));
+    const char* fullpath = filepath;
+    if (fx_plugin.playerBmpFile)
+        fullpath = fx_plugin.playerBmpFile->fullpath().c_str();
+
+    return fullpath;
+}
 
 /*
  *  FxPlugin::OnStartup
@@ -201,7 +492,57 @@ const FxPlugin::info& FxPlugin::GetInfo()
  */
 bool FxPlugin::OnStartup()
 {
-    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        fontstxd = modloader::hash("fonts.txd");
+        fontsptxd = modloader::hash("fonts_p.txd");
+        fontsrtxd = modloader::hash("fonts_r.txd");
+        fontsjtxd = modloader::hash("fonts_j.txd");
+        frontendtxd = modloader::hash("frontend.txd");
+        hudtxd = modloader::hash("hud.txd");
+        menutxd = modloader::hash("menu.txd");
+        particletxd = modloader::hash("particle.txd");
+        arrowdff = modloader::hash("arrow.dff");
+        zonecylbdff = modloader::hash("zonecylb.dff");
+
+        modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+
+        modloader_re3->callback_table->LoadTxd_FontsTxd = RE3Detour_LoadTxd_FontsTxd;
+        fontstxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_FontsPTxd = RE3Detour_LoadTxd_FontsPTxd;
+        fontsptxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_FontsRTxd = RE3Detour_LoadTxd_FontsRTxd;
+        fontsrtxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_FontsJTxd = RE3Detour_LoadTxd_FontsJTxd;
+        fontsjtxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_FrontendTxd = RE3Detour_LoadTxd_FrontendTxd;
+        frontendtxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_HudTxd = RE3Detour_LoadTxd_HudTxd;
+        hudtxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_MenuTxd = RE3Detour_LoadTxd_MenuTxd;
+        menutxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadTxd_ParticleTxd = RE3Detour_LoadTxd_ParticleTxd;
+        particletxd_detour.SetFileDetour(LoadTxdDetourRE3());
+
+        modloader_re3->callback_table->LoadAtomic2Return_ArrowDff = RE3Detour_LoadAtomicFile2Return_ArrowDff;
+        arrowdff_detour.SetFileDetour(LoadAtomicFile2ReturnDetourRE3());
+
+        modloader_re3->callback_table->LoadAtomic2Return_ZonecylbDff = RE3Detour_LoadAtomicFile2Return_ZonecylbDff;
+        zonecylbdff_detour.SetFileDetour(LoadAtomicFile2ReturnDetourRE3());
+
+        modloader_re3->callback_table->RegisterAndGetPlayerBmpFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetPlayerBmpFilePathRE3(filepath);
+        };
+
+        return true;
+    }
+    else if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
     {
         // File overrider params
         const auto reinstall_since_start = file_overrider::params(true, true, true, true);
@@ -374,6 +715,62 @@ bool FxPlugin::OnShutdown()
  */
 int FxPlugin::GetBehaviour(modloader::file& file)
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        if (!file.is_dir())
+        {
+            if (file.hash == fontstxd)
+            {
+                file.behaviour = fontstxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == fontsptxd)
+            {
+                file.behaviour = fontsptxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == fontsrtxd)
+            {
+                file.behaviour = fontsrtxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == fontsjtxd)
+            {
+                file.behaviour = fontsjtxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == frontendtxd)
+            {
+                file.behaviour = frontendtxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == hudtxd)
+            {
+                file.behaviour = hudtxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == menutxd)
+            {
+                file.behaviour = menutxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == particletxd)
+            {
+                file.behaviour = particletxd;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == arrowdff)
+            {
+                file.behaviour = arrowdff;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == zonecylbdff)
+            {
+                file.behaviour = zonecylbdff;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+        }
+    }
+
     if(!file.is_dir())
     {
         if((!gvm.IsSA() && file.hash == player_bmp) || this->FindOverrider(file.hash))
@@ -391,10 +788,35 @@ int FxPlugin::GetBehaviour(modloader::file& file)
  */
 bool FxPlugin::InstallFile(const modloader::file& file)
 {
-    if(file.hash == player_bmp)
-        return ApplyPlayerBmp(file);
-    else if(auto ov = this->FindOverrider(file.hash))
+    if(file.hash == player_bmp) {
+        if (loader->game_id == MODLOADER_GAME_RE3) {
+            playerBmpFile = &file;
+            return true;
+        } else {
+            return ApplyPlayerBmp(file);
+        }
+    } else if(auto ov = this->FindOverrider(file.hash))
         return ov->InstallFile(file);
+    else if (file.hash == fontstxd)
+        return fontstxd_detour.InstallFile(file);
+    else if (file.hash == fontsptxd)
+        return fontsptxd_detour.InstallFile(file);
+    else if (file.hash == fontsrtxd)
+        return fontsrtxd_detour.InstallFile(file);
+    else if (file.hash == fontsjtxd)
+        return fontsjtxd_detour.InstallFile(file);
+    else if (file.hash == frontendtxd)
+        return frontendtxd_detour.InstallFile(file);
+    else if (file.hash == hudtxd)
+        return hudtxd_detour.InstallFile(file);
+    else if (file.hash == menutxd)
+        return menutxd_detour.InstallFile(file);
+    else if (file.hash == particletxd)
+        return particletxd_detour.InstallFile(file);
+    else if (file.hash == arrowdff)
+        return arrowdff_detour.InstallFile(file);
+    else if (file.hash == zonecylbdff)
+        return zonecylbdff_detour.InstallFile(file);
     return false;
 }
 
@@ -404,10 +826,30 @@ bool FxPlugin::InstallFile(const modloader::file& file)
  */
 bool FxPlugin::ReinstallFile(const modloader::file& file)
 {
-    if(file.hash == player_bmp)
+    if(file.hash == player_bmp && loader->game_id != MODLOADER_GAME_RE3)
         return this->ApplyPlayerBmp(file);
     else if(auto ov = this->FindOverrider(file.hash))
         return ov->ReinstallFile();
+    else if (file.hash == fontstxd)
+        return fontstxd_detour.ReinstallFile();
+    else if (file.hash == fontsptxd)
+        return fontsptxd_detour.ReinstallFile();
+    else if (file.hash == fontsrtxd)
+        return fontsrtxd_detour.ReinstallFile();
+    else if (file.hash == fontsjtxd)
+        return fontsjtxd_detour.ReinstallFile();
+    else if (file.hash == frontendtxd)
+        return frontendtxd_detour.ReinstallFile();
+    else if (file.hash == hudtxd)
+        return hudtxd_detour.ReinstallFile();
+    else if (file.hash == menutxd)
+        return menutxd_detour.ReinstallFile();
+    else if (file.hash == particletxd)
+        return particletxd_detour.ReinstallFile();
+    else if (file.hash == arrowdff)
+        return arrowdff_detour.ReinstallFile();
+    else if (file.hash == zonecylbdff)
+        return zonecylbdff_detour.ReinstallFile();
     return false;
 }
 
@@ -417,9 +859,29 @@ bool FxPlugin::ReinstallFile(const modloader::file& file)
  */
 bool FxPlugin::UninstallFile(const modloader::file& file)
 {
-    if(file.hash == player_bmp)
+    if(file.hash == player_bmp && loader->game_id != MODLOADER_GAME_RE3)
         return this->RestorePlayerBmp();
     else if(auto ov = this->FindOverrider(file.hash))
         return ov->UninstallFile();
+    else if (file.hash == fontstxd)
+        return fontstxd_detour.UninstallFile();
+    else if (file.hash == fontsptxd)
+        return fontsptxd_detour.UninstallFile();
+    else if (file.hash == fontsrtxd)
+        return fontsrtxd_detour.UninstallFile();
+    else if (file.hash == fontsjtxd)
+        return fontsjtxd_detour.UninstallFile();
+    else if (file.hash == frontendtxd)
+        return frontendtxd_detour.UninstallFile();
+    else if (file.hash == hudtxd)
+        return hudtxd_detour.UninstallFile();
+    else if (file.hash == menutxd)
+        return menutxd_detour.UninstallFile();
+    else if (file.hash == particletxd)
+        return particletxd_detour.UninstallFile();
+    else if (file.hash == arrowdff)
+        return arrowdff_detour.UninstallFile();
+    else if (file.hash == zonecylbdff)
+        return zonecylbdff_detour.UninstallFile();
     return false;
 }

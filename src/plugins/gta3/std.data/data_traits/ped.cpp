@@ -89,8 +89,59 @@ using ped_store = gta3::data_store<ped_traits, std::map<
                         ped_traits::key_type, ped_traits::value_type
                         >>;
 
+class LoadFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int(const char*, uint8_t*, int, const char*)>;
+    using functor_type = std::function<int(func_type, const char*&, uint8_t*&, int&, const char*&)>;
+
+    functor_type functor;
+
+    LoadFileSB() = default;
+    LoadFileSB(const LoadFileSB&) = delete;
+    LoadFileSB(LoadFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    LoadFileSB& operator=(const LoadFileSB&) = delete;
+    LoadFileSB& operator=(LoadFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~LoadFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+    LoadFileSB,
+    int, const char*, uint8_t*, int, const char*>;
+
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    auto ReloadPedRelationship = [] {}; // refreshing ped relationship during gameplay might break save game, don't do it at all
-    plugin_ptr->AddMerger<ped_store>("ped.dat", true, false, false, reinstall_since_load, gdir_refresh(ReloadPedRelationship));
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+        plugin_ptr->peddat = modloader::hash("ped.dat");
+
+        plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+        plugin_ptr->modloader_re3->callback_table->LoadFile_PedDat = plugin_ptr->RE3Detour_LoadFile_PedDat;
+        plugin_ptr->peddat_detour.SetFileDetour(LoadFileDetourRE3());
+    } else {
+        auto ReloadPedRelationship = [] {}; // refreshing ped relationship during gameplay might break save game, don't do it at all
+        plugin_ptr->AddMerger<ped_store>("ped.dat", true, false, false, reinstall_since_load, gdir_refresh(ReloadPedRelationship));
+    }
 });

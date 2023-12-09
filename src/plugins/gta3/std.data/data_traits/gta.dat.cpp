@@ -56,7 +56,7 @@ struct gtadat_traits : public data_traits
         {
             if(gvm.IsSA()) return "gta.dat";
             if(gvm.IsVC()) return "gta_vc.dat";
-            if(gvm.IsIII()) return "gta3.dat";
+            if(gvm.IsIII() || plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) return "gta3.dat";
             return nullptr;
         }
     };
@@ -312,12 +312,72 @@ namespace datalib {
 template<uintptr_t addr>
 using detour_type = modloader::OpenFileDetour<addr, gtadat_traits::dtraits>;
 
+class OpenFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int32_t(const char*, const char*)>;
+    using functor_type = std::function<int32_t(func_type, const char*&, const char*&)>;
+
+    functor_type functor;
+
+    OpenFileSB() = default;
+    OpenFileSB(const OpenFileSB&) = delete;
+    OpenFileSB(OpenFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    OpenFileSB& operator=(const OpenFileSB&) = delete;
+    OpenFileSB& operator=(OpenFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~OpenFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+    OpenFileSB,
+    int32_t, const char*, const char*>;
+
 // Level File Merger
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
     const char* maindat = gtadat_traits::dtraits::datafile();
 
-    if(!gvm.IsIII())
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
+        plugin_ptr->gtadat = modloader::hash(maindat);
+        plugin_ptr->defaultdat = modloader::hash("default.dat");
+
+        auto params = file_overrider::params(true, true, false, false);
+        plugin_ptr->gtadat_detour.SetParams(params);
+        plugin_ptr->defaultdat_detour.SetParams(params);
+
+        plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+
+        plugin_ptr->modloader_re3->callback_table->OpenFile_GtaDat = plugin_ptr->RE3Detour_OpenFile_GtaDat;
+        plugin_ptr->gtadat_detour.SetFileDetour(OpenFileDetourRE3());
+
+        plugin_ptr->modloader_re3->callback_table->OpenFile_DefaultDat = plugin_ptr->RE3Detour_OpenFile_DefaultDat;
+        plugin_ptr->defaultdat_detour.SetFileDetour(OpenFileDetourRE3());
+    }
+    else if(!gvm.IsIII())
     {
         // Mergers for gta.dat and default.dat
         plugin_ptr->AddMerger<gtadat_store>(maindat, true, true, false, no_reinstall);

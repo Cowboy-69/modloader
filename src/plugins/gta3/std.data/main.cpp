@@ -23,8 +23,52 @@ using namespace modloader;
 
 void LazyGtaDatPatch();
 
-DataPlugin plugin;
-REGISTER_ML_PLUGIN(::plugin);
+
+class OpenFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int32_t(const char*, const char*)>;
+    using functor_type = std::function<int32_t(func_type, const char*&, const char*&)>;
+
+    functor_type functor;
+
+    OpenFileSB() = default;
+    OpenFileSB(const OpenFileSB&) = delete;
+    OpenFileSB(OpenFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    OpenFileSB& operator=(const OpenFileSB&) = delete;
+    OpenFileSB& operator=(OpenFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~OpenFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+    OpenFileSB,
+    int32_t, const char*, const char*>;
+
+DataPlugin dataplugin;
+REGISTER_ML_PLUGIN(::dataplugin);
 
 CEREAL_REGISTER_RTTI(void); // for DataPlugin::line_data_base
 
@@ -41,6 +85,404 @@ const DataPlugin::info& DataPlugin::GetInfo()
 }
 
 
+
+int32_t DataPlugin::RE3Detour_OpenFile_GtaDat(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.gtadat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::RE3Detour_OpenFile_DefaultDat(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.defaultdat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::RE3Detour_OpenFile_CarcolsDat(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.carcolsdat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::RE3Detour_OpenFile_PedGrpDat(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.pedgrpdat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::RE3Detour_OpenFile_CullzoneDat(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.cullzonedat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::RE3Detour_OpenFile_WaterproDat(const char* filename, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.waterprodat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+class LoadFileSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<int(const char*, uint8_t*, int, const char*)>;
+    using functor_type = std::function<int(func_type, const char*&, uint8_t*&, int&, const char*&)>;
+
+    functor_type functor;
+
+    LoadFileSB() = default;
+    LoadFileSB(const LoadFileSB&) = delete;
+    LoadFileSB(LoadFileSB&& rhs) : functor(std::move(rhs.functor)) {}
+    LoadFileSB& operator=(const LoadFileSB&) = delete;
+    LoadFileSB& operator=(LoadFileSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~LoadFileSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
+using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+    LoadFileSB,
+    int, const char*, uint8_t*, int, const char*>;
+
+int DataPlugin::RE3Detour_LoadFile_FistfiteDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.fistfitedat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_HandlingCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.handlingcfg_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_PedDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.peddat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_ObjectDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    dataplugin.has_model_info = true;
+
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.objectdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_PedStatsDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.pedstatsdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_WeaponDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.weapondat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_ParticleCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.particlecfg_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_SurfaceDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.surfacedat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_TimecycDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.timecycdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_FlightDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flightdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_Flight2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flight2dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_Flight3Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flight3dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_Flight4Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flight4dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_TracksDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.tracksdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::RE3Detour_LoadFile_Tracks2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto LoadFile0 = modloader_re3.re3_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.tracks2dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+void DataPlugin::RE3Detour_InitialiseGame()
+{
+    const auto& modloader_re3 = *dataplugin.modloader_re3;
+    const auto InitialiseGame0 = modloader_re3.re3_addr_table->InitialiseGame;
+    InitialiseGame0();
+
+    dataplugin.cache.DeleteUnusedCaches();
+
+    if (dataplugin.changed_readme_data)
+    {
+        if (!dataplugin.maybe_readme.empty() || dataplugin.had_cached_readme)
+            dataplugin.WriteReadmeCache();
+    }
+}
+
+
 /*
  *  DataPlugin::OnStartup
  *      Startups the plugin
@@ -49,9 +491,16 @@ bool DataPlugin::OnStartup()
 {
     void* p = mem_ptr(0x748CFB).get<void>();
 
-    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
+    if( gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3)
     {
         this->readme_magics.reserve(20);
+
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+            modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+            modloader_re3->callback_table->InitialiseGame = +[] {
+                RE3Detour_InitialiseGame();
+            };
+        }
 
         // Initialise the caching
         if(!cache.Startup())
@@ -68,27 +517,35 @@ bool DataPlugin::OnStartup()
         // Makes default.dat/gta.dat load in a lazy way
         LazyGtaDatPatch();
 
-        // Hook allowing us to know when we are ready to know about the model names of the game
-        using modelinfo_hook =  function_hooker<0x5B925F, void(const char*)>;
-        make_static_hook<modelinfo_hook>([this](modelinfo_hook::func_type CObjectData__Initialise, const char* p)
-        {
-            this->has_model_info = true;
-            return CObjectData__Initialise(p);
-        });
-
-        // Hook after the loading screen to write a readme cache
-        using initialise_hook = injector::function_hooker<0x748CFB, void()>;
-        make_static_hook<initialise_hook>([this](initialise_hook::func_type InitialiseGame)
-        {
-            InitialiseGame();
-            if(this->changed_readme_data)
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+            // Moved to DataPlugin::RE3Detour_LoadFile_ObjectDat
+        } else {
+            // Hook allowing us to know when we are ready to know about the model names of the game
+            using modelinfo_hook =  function_hooker<0x5B925F, void(const char*)>;
+            make_static_hook<modelinfo_hook>([this](modelinfo_hook::func_type CObjectData__Initialise, const char* p)
             {
-                // If we have a empty list of readme data and we previosly had a cached readme, overwrite it with empty data
-                // In the case the list is not empty, overwrite with new data
-                if(!this->maybe_readme.empty() || this->had_cached_readme)
-                    this->WriteReadmeCache();
-            }
-        });
+                this->has_model_info = true;
+                return CObjectData__Initialise(p);
+            });
+        }
+
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+            // Moved to DataPlugin::RE3Detour_InitialiseGame
+        } else {
+            // Hook after the loading screen to write a readme cache
+            using initialise_hook = injector::function_hooker<0x748CFB, void()>;
+            make_static_hook<initialise_hook>([this](initialise_hook::func_type InitialiseGame)
+            {
+                InitialiseGame();
+                if(this->changed_readme_data)
+                {
+                    // If we have a empty list of readme data and we previosly had a cached readme, overwrite it with empty data
+                    // In the case the list is not empty, overwrite with new data
+                    if(!this->maybe_readme.empty() || this->had_cached_readme)
+                        this->WriteReadmeCache();
+                }
+            });
+        }
 
         // When there's no cache present mark changed_readme_data as true because we'll need to generate a cache
         this->had_cached_readme   = IsPathA(cache.GetCachePath("readme.ld").data()) != 0;
@@ -116,6 +573,135 @@ bool DataPlugin::OnShutdown()
  */
 int DataPlugin::GetBehaviour(modloader::file& file)
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        if(!file.is_dir())
+        {
+            if(file.hash == gtadat)
+            {
+                file.behaviour = gtadat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if(file.hash == defaultdat)
+            {
+                file.behaviour = defaultdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == carcolsdat)
+            {
+                file.behaviour = carcolsdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            //else if (file.hash == IDE)
+            else if (file.is_ext("ide"))
+            {
+                /*static const files_behv_t* ide_behv = FindBehv(ide_merger_name);
+                if (ide_behv) {
+                    file.behaviour = ide_behv->canmerge ?
+                        SetType(modloader::hash(file.filepath()), ide_behv->index) :
+                        SetType(file.hash, ide_behv->index);
+                }*/
+
+                //file.behaviour = IDE;
+                //return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.is_ext("ipl"))
+            {
+                //file.behaviour = IPL;
+                //return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == pedgrpdat)
+            {
+                file.behaviour = pedgrpdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == cullzonedat)
+            {
+                file.behaviour = cullzonedat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == fistfitedat)
+            {
+                file.behaviour = fistfitedat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == handlingcfg)
+            {
+                file.behaviour = handlingcfg;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == peddat)
+            {
+                file.behaviour = peddat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == objectdat)
+            {
+                file.behaviour = objectdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == pedstatsdat)
+            {
+                file.behaviour = pedstatsdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == weapondat)
+            {
+                file.behaviour = weapondat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == particlecfg)
+            {
+                file.behaviour = particlecfg;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == surfacedat)
+            {
+                file.behaviour = surfacedat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == timecycdat)
+            {
+                file.behaviour = timecycdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == waterprodat)
+            {
+                file.behaviour = waterprodat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == flightdat)
+            {
+                file.behaviour = flightdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == flight2dat)
+            {
+                file.behaviour = flight2dat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == flight3dat)
+            {
+                file.behaviour = flight3dat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == flight4dat)
+            {
+                file.behaviour = flight4dat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == tracksdat)
+            {
+                file.behaviour = tracksdat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+            else if (file.hash == tracks2dat)
+            {
+                file.behaviour = tracks2dat;
+                return MODLOADER_BEHAVIOUR_YES;
+            }
+        }
+    }
+
     static const files_behv_t* ipl_behv = FindBehv(ipl_merger_name);
     static const files_behv_t* ide_behv = FindBehv(ide_merger_name);
     static const files_behv_t* decision_behv = FindBehv(decision_merger_hash);
@@ -191,6 +777,103 @@ int DataPlugin::GetBehaviour(modloader::file& file)
  */
 bool DataPlugin::InstallFile(const modloader::file& file)
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        if (file.behaviour == gtadat)
+        {
+            return gtadat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == defaultdat)
+        {
+            return defaultdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == carcolsdat)
+        {
+            return carcolsdat_detour.InstallFile(file);
+        }
+        else if (file.is_ext("ide"))
+        {
+            ideFiles[file.filename()] = &file;
+            return true;
+        }
+        else if (file.is_ext("ipl") || file.is_ext("zon"))
+        {
+            iplFiles[file.filename()] = &file;
+            return true;
+        }
+        else if (file.behaviour == pedgrpdat)
+        {
+            return pedgrpdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == cullzonedat)
+        {
+            return cullzonedat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == fistfitedat)
+        {
+            return fistfitedat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == handlingcfg)
+        {
+            return handlingcfg_detour.InstallFile(file);
+        }
+        else if (file.behaviour == peddat)
+        {
+            return peddat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == objectdat)
+        {
+            return objectdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == pedstatsdat)
+        {
+            return pedstatsdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == weapondat)
+        {
+            return weapondat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == particlecfg)
+        {
+            return particlecfg_detour.InstallFile(file);
+        }
+        else if (file.behaviour == surfacedat)
+        {
+            return surfacedat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == timecycdat)
+        {
+            return timecycdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == waterprodat)
+        {
+            return waterprodat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == flightdat)
+        {
+            return flightdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == flight2dat)
+        {
+            return flight2dat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == flight3dat)
+        {
+            return flight3dat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == flight4dat)
+        {
+            return flight4dat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == tracksdat)
+        {
+            return tracksdat_detour.InstallFile(file);
+        }
+        else if (file.behaviour == tracks2dat)
+        {
+            return tracks2dat_detour.InstallFile(file);
+        }
+    }
+
     if(file.is_ext("txt"))
     {
         this->readme_toinstall.emplace(&file, 0);
@@ -228,6 +911,100 @@ bool DataPlugin::InstallFile(const modloader::file& file)
  */
 bool DataPlugin::ReinstallFile(const modloader::file& file)
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        if (file.behaviour == gtadat) {
+            return gtadat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == defaultdat)
+        {
+            return defaultdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == carcolsdat)
+        {
+            return carcolsdat_detour.ReinstallFile();
+        }
+        else if (file.is_ext("ide"))
+        {
+            InstallFile(file);
+        }
+        else if (file.is_ext("ipl") || file.is_ext("zon"))
+        {
+            InstallFile(file);
+        }
+        else if (file.behaviour == pedgrpdat)
+        {
+            return pedgrpdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == cullzonedat)
+        {
+            return cullzonedat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == fistfitedat)
+        {
+            return pedgrpdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == handlingcfg)
+        {
+            return handlingcfg_detour.ReinstallFile();
+        }
+        else if (file.behaviour == peddat)
+        {
+            return peddat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == objectdat)
+        {
+            return objectdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == pedstatsdat)
+        {
+            return pedstatsdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == weapondat)
+        {
+            return weapondat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == particlecfg)
+        {
+            return particlecfg_detour.ReinstallFile();
+        }
+        else if (file.behaviour == surfacedat)
+        {
+            return surfacedat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == timecycdat)
+        {
+            return timecycdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == waterprodat)
+        {
+            return waterprodat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == flightdat)
+        {
+            return flightdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == flight2dat)
+        {
+            return flight2dat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == flight3dat)
+        {
+            return flight3dat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == flight4dat)
+        {
+            return flight4dat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == tracksdat)
+        {
+            return tracksdat_detour.ReinstallFile();
+        }
+        else if (file.behaviour == tracks2dat)
+        {
+            return tracks2dat_detour.ReinstallFile();
+        }
+    }
+
     if(file.is_ext("txt"))
     {
         this->readme_touninstall.emplace(&file, 0);
@@ -264,6 +1041,101 @@ bool DataPlugin::ReinstallFile(const modloader::file& file)
  */
 bool DataPlugin::UninstallFile(const modloader::file& file)
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        if (file.behaviour == gtadat)
+        {
+            return gtadat_detour.UninstallFile();
+        }
+        else if (file.behaviour == defaultdat)
+        {
+            return defaultdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == carcolsdat)
+        {
+            return carcolsdat_detour.UninstallFile();
+        }
+        else if (file.is_ext("ide"))
+        {
+            
+        }
+        else if (file.is_ext("ipl") || file.is_ext("zon"))
+        {
+        
+        }
+        else if (file.behaviour == pedgrpdat)
+        {
+            return pedgrpdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == cullzonedat)
+        {
+            return cullzonedat_detour.UninstallFile();
+        }
+        else if (file.behaviour == fistfitedat)
+        {
+            return fistfitedat_detour.UninstallFile();
+        }
+        else if (file.behaviour == handlingcfg)
+        {
+            return handlingcfg_detour.UninstallFile();
+        }
+        else if (file.behaviour == peddat)
+        {
+            return peddat_detour.UninstallFile();
+        }
+        else if (file.behaviour == objectdat)
+        {
+            return objectdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == pedstatsdat)
+        {
+            return pedstatsdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == weapondat)
+        {
+            return weapondat_detour.UninstallFile();
+        }
+        else if (file.behaviour == particlecfg)
+        {
+            return particlecfg_detour.UninstallFile();
+        }
+        else if (file.behaviour == surfacedat)
+        {
+            return surfacedat_detour.UninstallFile();
+        }
+        else if (file.behaviour == timecycdat)
+        {
+            return timecycdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == waterprodat)
+        {
+            return waterprodat_detour.UninstallFile();
+        }
+        else if (file.behaviour == flightdat)
+        {
+            return flightdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == flight2dat)
+        {
+            return flight2dat_detour.UninstallFile();
+        }
+        else if (file.behaviour == flight3dat)
+        {
+            return flight3dat_detour.UninstallFile();
+        }
+        else if (file.behaviour == flight4dat)
+        {
+            return flight4dat_detour.UninstallFile();
+        }
+        else if (file.behaviour == tracksdat)
+        {
+            return tracksdat_detour.UninstallFile();
+        }
+        else if (file.behaviour == tracks2dat)
+        {
+            return tracks2dat_detour.UninstallFile();
+        }
+    }
+
     if(file.is_ext("txt"))
     {
         this->readme_touninstall.emplace(&file, 0);

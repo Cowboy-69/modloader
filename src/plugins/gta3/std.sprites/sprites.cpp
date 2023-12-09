@@ -21,10 +21,12 @@ static const uint64_t is_splash_mask = 0x0000000200000000;  // Mask for is_splas
 class ScriptSpritesPlugin : public modloader::basic_plugin
 {
     private:
+        modloader_re3_t* modloader_re3{};
+
+    public:
         std::map<std::string, const modloader::file*> script_dicts;
         std::map<std::string, const modloader::file*> splash_dicts;
 
-    public:
         const info& GetInfo();
         bool OnStartup();
         bool OnShutdown();
@@ -50,7 +52,24 @@ const ScriptSpritesPlugin::info& ScriptSpritesPlugin::GetInfo()
 
 
 
+const char* RegisterAndGetSplashFilePathRE3(const char* filepath)
+{
+    std::string filename = filepath;
+    filename = &filepath[GetLastPathComponent(filename)];
 
+    // Here are also the files from script_dicts
+    auto it = scr_spr_plugin.splash_dicts.find(tolower(filename));
+    if (it != scr_spr_plugin.splash_dicts.end())
+    {
+        filename = it->second->fullpath();
+        filepath = filename.c_str();
+    }
+
+    scr_spr_plugin.Log("Loading splash sprite \"%s\"", filepath);
+    static std::string static_result;
+    static_result = filepath;
+    return static_result.empty() ? filepath : static_result.c_str();
+}
 
 /*
  *  ScriptSpritesPlugin::OnStartup
@@ -58,6 +77,14 @@ const ScriptSpritesPlugin::info& ScriptSpritesPlugin::GetInfo()
  */
 bool ScriptSpritesPlugin::OnStartup()
 {
+    if (loader->game_id == MODLOADER_GAME_RE3) {
+        scr_spr_plugin.modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
+        scr_spr_plugin.modloader_re3->callback_table->RegisterAndGetSplashFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetSplashFilePathRE3(filepath);
+        };
+        return true;
+    }
+
     // Although III/VC uses "models/", we'll keep the "models/txd" pattern.
     if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())
     {
