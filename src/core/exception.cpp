@@ -322,6 +322,29 @@ void ExceptionTracer::PrintRegisters()
     Print("Register dump:");
     EnterScope();
     {
+#ifdef _WIN64
+        // Print main general purposes registers
+        if(context.ContextFlags & CONTEXT_INTEGER)
+        {
+            PrintIntRegister("RAX", context.Rax);
+            PrintIntRegister("RBX", context.Rbx);
+            PrintIntRegister("RCX", context.Rcx);
+            PrintIntRegister("RDX", context.Rdx);
+            PrintIntRegister("RDI", context.Rdi);
+            PrintIntRegister("RSI", context.Rsi);
+        }
+
+        // Print control registers
+        if(context.ContextFlags & CONTEXT_CONTROL)
+        {
+            PrintIntRegister("RBP", context.Rbp);
+            PrintIntRegister("RIP", context.Rip);
+            PrintIntRegister("RSP", context.Rsp);
+            PrintIntRegister("EFL", context.EFlags);
+            PrintSegRegister("CS", context.SegCs);
+            PrintSegRegister("SS", context.SegSs);
+        }
+#else
         // Print main general purposes registers
         if(context.ContextFlags & CONTEXT_INTEGER)
         {
@@ -343,6 +366,7 @@ void ExceptionTracer::PrintRegisters()
             PrintSegRegister("CS", context.SegCs);
             PrintSegRegister("SS", context.SegSs);
         }
+#endif
 
         // Print segment registers
         if(context.ContextFlags & CONTEXT_SEGMENTS)
@@ -370,7 +394,11 @@ void ExceptionTracer::PrintStackdump()
     static const auto max_words_in_line_magic = stackdump_words_per_line + 10;
     
     MEMORY_BASIC_INFORMATION mbi;
+#ifdef _WIN64
+    uintptr_t base, bottom, top = (uintptr_t) context.Rsp;
+#else
     uintptr_t base, bottom, top = (uintptr_t) context.Esp;
+#endif
     auto words_in_line = max_words_in_line_magic;
 
     // Finds the bottom of the stack from it's base pointer
@@ -580,6 +608,15 @@ StackTracer::StackTracer(const CONTEXT& context)
     memset(&this->frame, 0, sizeof(frame));
     memcpy(&this->context, &context, sizeof(context));
 
+#ifdef _WIN64
+    // Setup the initial frame context
+    frame.AddrPC.Mode      = AddrModeFlat;
+    frame.AddrPC.Offset    = context.Rip;
+    frame.AddrFrame.Mode   = AddrModeFlat;
+    frame.AddrFrame.Offset = context.Rbp;
+    frame.AddrStack.Mode   = AddrModeFlat;
+    frame.AddrStack.Offset = context.Rsp;
+#else
     // Setup the initial frame context
     frame.AddrPC.Mode      = AddrModeFlat;
     frame.AddrPC.Offset    = context.Eip;
@@ -587,6 +624,7 @@ StackTracer::StackTracer(const CONTEXT& context)
     frame.AddrFrame.Offset = context.Ebp;
     frame.AddrStack.Mode   = AddrModeFlat;
     frame.AddrStack.Offset = context.Esp;
+#endif
 }
 
 /*

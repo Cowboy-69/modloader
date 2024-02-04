@@ -9,6 +9,7 @@
 #include <stdinc.hpp>
 #include "streaming.hpp"
 
+#ifndef _WIN64
 extern "C" {
 
 /* Hooks and sub calls */
@@ -156,4 +157,4 @@ void __declspec(naked) HOOK_FixBikeSuspLines()
 
 
 }   // extern "C"
-
+#endif

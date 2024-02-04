@@ -88,7 +88,14 @@ struct BankHeader
 };
 #pragma pack(pop)
 
+#ifdef _WIN64
+static_assert(sizeof(CAEBankLoader)     == 0x950,   "Incorrect struct size: CAEBankLoader");
+static_assert(sizeof(CAESoundRequest)   == 0x2C,    "Incorrect struct size: CAESoundRequest");
+static_assert(sizeof(CAEBankSlot)       == 0x12D4,  "Incorrect struct size: CAEBankSlot");
+static_assert(sizeof(CAEBankLookupItem) == 0x0C,    "Incorrect struct size: CAEBankLookupItem");
+#else
 static_assert(sizeof(CAEBankLoader)     == 0x6E4,   "Incorrect struct size: CAEBankLoader");
 static_assert(sizeof(CAESoundRequest)   == 0x20,    "Incorrect struct size: CAESoundRequest");
 static_assert(sizeof(CAEBankSlot)       == 0x12D4,  "Incorrect struct size: CAEBankSlot");
 static_assert(sizeof(CAEBankLookupItem) == 0x0C,    "Incorrect struct size: CAEBankLookupItem");
+#endif

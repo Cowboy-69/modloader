@@ -272,7 +272,11 @@ void Loader::Startup(uint8_t game_id)
             char hash_as_string[128];
             std::string normal_path = NormalizePath(this->gamePath);
 
+#ifdef _WIN64
+            static_assert(sizeof(size_t) == 8, "%.8x not correct");
+#else
             static_assert(sizeof(size_t) == 4, "%.8x not correct");
+#endif
             sprintf(hash_as_string, "%.8x", modloader::hash(normal_path));
 
             std::string unique_id;

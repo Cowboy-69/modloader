@@ -174,5 +174,9 @@ public:
 	}
 };
 
+#ifdef _WIN64
+static_assert(sizeof(CPool<int>) == 0x20, "...");
+#else
 static_assert(sizeof(CPool<int>) == 0x14, "...");
+#endif
 

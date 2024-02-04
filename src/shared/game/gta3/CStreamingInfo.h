@@ -245,6 +245,12 @@ private:
     static const LibF92LA* GetF92LA();
 };
 
+#ifdef _WIN64
+static_assert(sizeof(CStreamingInfoSA) == 0x14, "Incorrect struct size: CStreamingInfoSA");
+static_assert(sizeof(CStreamingInfoVC) == 0x1C, "Incorrect struct size: CStreamingInfoVC");
+static_assert(sizeof(CStreamingInfoIII) == 0x1C, "Incorrect struct size: CStreamingInfoIII");
+#else
 static_assert(sizeof(CStreamingInfoSA) == 0x14, "Incorrect struct size: CStreamingInfoSA");
 static_assert(sizeof(CStreamingInfoVC) == 0x14, "Incorrect struct size: CStreamingInfoVC");
 static_assert(sizeof(CStreamingInfoIII) == 0x14, "Incorrect struct size: CStreamingInfoIII");
+#endif

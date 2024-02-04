@@ -11,11 +11,13 @@ using namespace modloader;
 extern "C"
 {
     // Assembly hooks at "asm/" folder
+#ifndef _WIN64
     extern void HOOK_RegisterNextModelRead();
     extern void HOOK_NewFile();
     extern void HOOK_RegisterNextModelRead_VC();
     extern void HOOK_NewFile_3VC();
     extern void HOOK_FixBikeSuspLines();
+#endif
 
     // Next model read registers. It's important to have those two vars! Don't leave only one!
     int  iNextModelBeingLoaded = -1;            // Set by RegisterNextModelRead, will then be sent to iModelBeingLoaded
@@ -576,13 +578,17 @@ void CAbstractStreaming::Patch()
         // We need to know the next model to be read before the CdStreamRead call happens
         if(gvm.IsSA())
         {
+#ifndef _WIN64
             MakeCALL(0x40CCA6, raw_ptr(HOOK_RegisterNextModelRead));
+#endif
             MakeNOP(0x40CCA6 + 5, 2);
         }
         else if(gvm.IsVC())
         {
+#ifndef _WIN64
             MakeCALL(0x40CCA6, raw_ptr(HOOK_RegisterNextModelRead_VC));
             MakeCALL(xVc(0x40B738), raw_ptr(HOOK_RegisterNextModelRead_VC));
+#endif
             MakeNOP(0x40CCA6 + 5, 1);
             MakeNOP(xVc(0x40B738) + 5, 1);
         }
@@ -608,12 +614,16 @@ void CAbstractStreaming::Patch()
         // We need to return a new hFile if the file is on disk
         if(gvm.IsSA())
         {
+#ifndef _WIN64
             MakeCALL(0x406A5B, raw_ptr(HOOK_NewFile));
+#endif
             MakeNOP(0x406A5B + 5, 1);
         }
         else if(gvm.IsVC() || gvm.IsIII())
         {
+#ifndef _WIN64
             MakeCALL(xVc(0x408521), raw_ptr(HOOK_NewFile_3VC));
+#endif
         }
         else if(game_id == MODLOADER_GAME_RE3)
         {
@@ -851,7 +861,9 @@ void CAbstractStreaming::Patch()
         // Fix issue with CBike having some additional fields on SetupSuspensionLines that gets deallocated when
         // we destroy it's model or something. Do just like CQuad and other does, checks if the pointer is null and then allocate it.
         MakeNOP(0x6B89CE, 6);
+#ifndef _WIN64
         MakeCALL(0x6B89CE, HOOK_FixBikeSuspLines);
+#endif
     }
 
     // Disable txd.img / txd.dir

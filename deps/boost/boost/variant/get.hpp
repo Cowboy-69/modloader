@@ -175,12 +175,13 @@ strict_get(
       BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE(U)
     ) BOOST_NOEXCEPT
 {
+#ifndef _WIN64
     BOOST_STATIC_ASSERT_MSG(
         (boost::detail::variant::holds_element<boost::variant< BOOST_VARIANT_ENUM_PARAMS(T) >, U >::value),
         "boost::variant does not contain specified type U, "
         "call to boost::get<U>(boost::variant<T...>*) will always return NULL"
     );
-
+#endif
     return relaxed_get<U>(operand);
 }
 
@@ -192,11 +193,13 @@ strict_get(
       BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE(U)
     ) BOOST_NOEXCEPT
 {
+#ifndef _WIN64
     BOOST_STATIC_ASSERT_MSG(
         (boost::detail::variant::holds_element<boost::variant< BOOST_VARIANT_ENUM_PARAMS(T) >, const U >::value),
         "boost::variant does not contain specified type U, "
         "call to boost::get<U>(const boost::variant<T...>*) will always return NULL"
     );
+#endif
 
     return relaxed_get<U>(operand);
 }
@@ -209,11 +212,13 @@ strict_get(
       BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE(U)
     )
 {
+#ifndef _WIN64
     BOOST_STATIC_ASSERT_MSG(
         (boost::detail::variant::holds_element<boost::variant< BOOST_VARIANT_ENUM_PARAMS(T) >, U >::value),
         "boost::variant does not contain specified type U, "
         "call to boost::get<U>(boost::variant<T...>&) will always throw boost::bad_get exception"
     );
+#endif
 
     return relaxed_get<U>(operand);
 }
@@ -226,11 +231,13 @@ strict_get(
       BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE(U)
     )
 {
+#ifndef _WIN64
     BOOST_STATIC_ASSERT_MSG(
         (boost::detail::variant::holds_element<boost::variant< BOOST_VARIANT_ENUM_PARAMS(T) >, const U >::value),
         "boost::variant does not contain specified type U, "
         "call to boost::get<U>(const boost::variant<T...>&) will always throw boost::bad_get exception"
     );
+#endif
 
     return relaxed_get<U>(operand);
 }

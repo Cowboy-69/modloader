@@ -40,5 +40,10 @@ struct CdStreamInfoSA	// sizeof = 0x8CC
 	DWORD gta3_id;
 };
 
+#ifdef _WIN64
+static_assert(sizeof(CdStreamInfoSA) == 0x960, "Incorrect struct size: CdStreamInfoSA");
+static_assert(sizeof(CdStream) == 0x48, "Incorrect struct size: CdStream");
+#else
 static_assert(sizeof(CdStreamInfoSA) == 0x8CC, "Incorrect struct size: CdStreamInfoSA");
 static_assert(sizeof(CdStream) == 0x30, "Incorrect struct size: CdStream");
+#endif

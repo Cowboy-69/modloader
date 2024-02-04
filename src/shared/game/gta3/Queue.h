@@ -25,7 +25,11 @@ struct Queue
 };
 #pragma pack(pop)
 
+#ifdef _WIN64
+static_assert(sizeof(Queue) == 0x14, "Incorrect struct size: Queue");
+#else
 static_assert(sizeof(Queue) == 0x10, "Incorrect struct size: Queue");
+#endif
 
 
 

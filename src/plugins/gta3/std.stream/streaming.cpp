@@ -34,7 +34,11 @@ void CAbstractStreaming::InitialiseStructAbstraction()
 	if(this->bIsFirstLaunched)
 		return;		// We already init this once, no need to do again
 
+#ifdef _WIN64
+    this->sizeof_CStreamingInfo = CStreamingInfo::GetSizeof() + 4;
+#else
     this->sizeof_CStreamingInfo = CStreamingInfo::GetSizeof();
+#endif
     this->f92la                 = Fastman92LimitAdjusterCreate();
 
     if(this->f92la.hLib)

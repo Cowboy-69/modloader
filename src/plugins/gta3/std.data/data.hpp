@@ -661,7 +661,11 @@ class DataPlugin : public modloader::basic_plugin
                 
                 // Add data files we'll work on to the caching stream
                 cs.AddFile(file.c_str(), true);
+#ifdef _WIN64 // TODO
+                //cs.AddReadmeData(std::move(readme_data));
+#else
                 cs.AddReadmeData(std::move(readme_data));
+#endif
                 for(auto it = range.first; it != range.second; ++it)
                 {
                     const modloader::file& f = *(it->second.second);

@@ -11,7 +11,9 @@ using namespace std::placeholders;
 extern "C"
 {
     void* (*ColModelPool_new)(int)  = nullptr;
+#ifndef _WIN64
     extern void HOOK_LoadColFileFix(int);
+#endif
 };
 
 static void FixColFile();
@@ -178,7 +180,9 @@ void FixColFile()
     using rel_f       = int(void*);
 
     // Fixes the crash caused by using COLFILE for a building etc
+#ifndef _WIN64
     ColModelPool_new = MakeCALL(0x5B4F2E, HOOK_LoadColFileFix).get();
+#endif
 
     // Reads collision info and check if we need to use our own collision buffer
     auto ReadColInfo = [](std::function<rcolinfo_f> Read, void*& f, uint32_t*& buffer, size_t& size)

@@ -17,6 +17,7 @@ static void vcemu_CStreaming__RemoveAllUnusedModels()
     injector::scoped_write<5> c3;
     c3.write<uint8_t>(raw_ptr(ptr_end), 0xC3, true); // ret
 
+#ifndef _WIN64
     _asm
     {
         pushad       // jumps into the middle of a game function, save regs
@@ -25,6 +26,7 @@ static void vcemu_CStreaming__RemoveAllUnusedModels()
         add esp, 0xC
         popad
     }
+#endif
 }
 
 // Emulating SA's CDirectory::FindItem(ecx, name) for VC
@@ -37,6 +39,7 @@ static void* __fastcall vcemu_CDirectory_FindItem2(void* self, int, const char* 
     void* ptr_dummy = &dummy;
     void* result = nullptr;
     
+#ifndef _WIN64
     _asm
     {
         push ptr_dummy
@@ -54,6 +57,7 @@ static void* __fastcall vcemu_CDirectory_FindItem2(void* self, int, const char* 
 
         NotFound:
     }
+#endif
 
     return result;
 }
@@ -65,7 +69,7 @@ static void vc_10(std::map<memory_pointer_raw, memory_pointer_raw>& map)
     //
     // (Notice '->' means "exactly pointing to"!!!!!)
     //
- 
+#ifndef _WIN64
     // Core
     if(true)
     {
@@ -314,4 +318,5 @@ static void vc_10(std::map<memory_pointer_raw, memory_pointer_raw>& map)
     {
         // Not available for VC
     }
+#endif
 }

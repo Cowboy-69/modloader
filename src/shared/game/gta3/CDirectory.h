@@ -24,6 +24,11 @@ struct CDirectorySA     // sizeof = 0x10
 
 struct CDirectory;
 
+#ifdef _WIN64
+static_assert(sizeof(CDirectorySA) == 0x14, "Incorrect struct size: CDirectorySA");
+static_assert(sizeof(DirectoryInfo) == 0x20, "Incorrect struct size: CDirectory::DirectoryInfo");
+#else
 static_assert(sizeof(CDirectorySA) == 0x10, "Incorrect struct size: CDirectorySA");
 //static_assert(sizeof(CDirectoryVC) == 0x0C, "Incorrect struct size: CDirectoryVC");
 static_assert(sizeof(DirectoryInfo) == 0x20, "Incorrect struct size: CDirectory::DirectoryInfo");
+#endif

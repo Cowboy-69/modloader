@@ -83,7 +83,11 @@ static void III_RE3(std::map<memory_pointer_raw, memory_pointer_raw>& map)
         map[xVc(0x4102B2)] = &uMaxResources;          // -> DWORD MAX_RES ; max resources
         map[0x5B8AFC] = &gta3emu_pMaxInfoForModel;// -> &ms_aInfoForModel[MAX_INFO_FOR_MODEL]
         // DONT CHANGE THE FOLLOWING LINE, CHANGE THE MAPPING ABOVE INSTEAD!!! Maybe change the 0x14 sizeof /////////////
+#ifdef _WIN64
+        gta3emu_pMaxInfoForModel = *mem_ptr(0x40D014).get<char*>() + (0x1C * *mem_ptr(xVc(0x4102B2)).get<uint32_t>());
+#else
         gta3emu_pMaxInfoForModel = *mem_ptr(0x40D014).get<char*>() + (0x14 * *mem_ptr(xVc(0x4102B2)).get<uint32_t>());
+#endif
         ///////////////////////////////////
 
         map[0x8E3FE0] = modloader_re3->re3_addr_table->p_gCdStreamFlags;   // DWORD StreamCreateFlags

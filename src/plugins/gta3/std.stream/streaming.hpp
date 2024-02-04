@@ -342,6 +342,10 @@ class CAbstractStreaming
         void SetInfoForModel(id_t id, uint32_t offset, uint32_t blocks)
         {
             auto& model = *this->InfoForModel(id);
+#ifdef _WIN64
+            if (&model == nullptr)
+                return;
+#endif
             model.SetStreamData(offset, blocks);
             model.SetNextOnCd(-1);
             ClearNextOnCdPointingTo(id);
