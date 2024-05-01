@@ -27,7 +27,7 @@ static void PerformDirectoryRead(size_t size,
     std::function<bool(CStreamingInfo&, bool)> RegisterEntry    = nullptr
     )
 {
-    if(plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    if(plugin_ptr->loader->game_id == MODLOADER_GAME_RE3 || plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
     {
         struct Context
         {
@@ -54,7 +54,10 @@ static void PerformDirectoryRead(size_t size,
         };
         if(!context.RegisterSpecialEntry) RegisterSpecialEntryProxy = nullptr;
 
-        return modloader_re3->re3_addr_table->LoadCdDirectoryUsingCallbacks(&context, cd_index, ReadEntryProxy, RegisterEntryProxy, RegisterSpecialEntryProxy);
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+            return modloader_re3->re3_addr_table->LoadCdDirectoryUsingCallbacks(&context, cd_index, ReadEntryProxy, RegisterEntryProxy, RegisterSpecialEntryProxy);
+        else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+            return modloader_reVC->reVC_addr_table->LoadCdDirectoryUsingCallbacks(&context, cd_index, ReadEntryProxy, RegisterEntryProxy, RegisterSpecialEntryProxy);
     }
 
     using nf_hook = function_hooker<0x5B6183, void*(const char*, const char*)>;
@@ -181,7 +184,7 @@ static void PerformDirectoryRead(size_t size,
  */
 void CAbstractStreaming::FetchCdDirectories(TempCdDir_t& cd_dir, std::function<void()> LoadCdDirectories)
 {
-    if(plugin_ptr->loader->game_id != MODLOADER_GAME_RE3)
+    if(plugin_ptr->loader->game_id != MODLOADER_GAME_RE3 && plugin_ptr->loader->game_id != MODLOADER_GAME_REVC)
     {
         using namespace std::placeholders;
         typedef function_hooker<0x5B8310, void(const char*, int)> fetchcd_hook;

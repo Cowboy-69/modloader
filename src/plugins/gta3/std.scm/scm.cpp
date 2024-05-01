@@ -18,7 +18,9 @@ class ScmPlugin : public modloader::basic_plugin
         uint32_t mainscm; // Hash for main.scm
         //file_overrider mainscm_detour;
         modloader_re3_t* modloader_re3{};
+        modloader_reVC_t* modloader_reVC{};
         static int32_t RE3Detour_OpenFile_MainScm(const char*, const char*);
+        static int32_t REVCDetour_OpenFile_MainScm(const char*, const char*);
 
         file_overrider overrider;
 
@@ -74,7 +76,7 @@ public:
     }
 };
 
-using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+using OpenFileDetourRE = modloader::basic_file_detour<dtraits::OpenFile,
     OpenFileSB,
     int32_t, const char*, const char*>;
 
@@ -82,6 +84,22 @@ int32_t ScmPlugin::RE3Detour_OpenFile_MainScm(const char* filename, const char* 
 {
     const auto& modloader_re3 = *scm_plugin.modloader_re3;
     const auto OpenFile0 = modloader_re3.re3_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = scm_plugin.overrider;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t ScmPlugin::REVCDetour_OpenFile_MainScm(const char* filename, const char* mode)
+{
+    const auto& modloader_reVC = *scm_plugin.modloader_reVC;
+    const auto OpenFile0 = modloader_reVC.reVC_addr_table->CFileMgr_OpenFile;
 
     auto& base_detour = scm_plugin.overrider;
     if (base_detour.NumInjections() == 1)
@@ -115,13 +133,24 @@ const ScmPlugin::info& ScmPlugin::GetInfo()
  */
 bool ScmPlugin::OnStartup()
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3)
+    {
         mainscm = modloader::hash("main.scm");
 
         modloader_re3 = (modloader_re3_t*)loader->FindSharedData("MODLOADER_RE3")->p;
         modloader_re3->callback_table->OpenFile_MainScm = RE3Detour_OpenFile_MainScm;
         this->overrider.SetParams(file_overrider::params(true, true, true, true));
-        this->overrider.SetFileDetour(OpenFileDetourRE3());
+        this->overrider.SetFileDetour(OpenFileDetourRE());
+        return true;
+    }
+    else if (loader->game_id == MODLOADER_GAME_REVC)
+    {
+        mainscm = modloader::hash("main.scm");
+
+        modloader_reVC = (modloader_reVC_t*)loader->FindSharedData("MODLOADER_REVC")->p;
+        modloader_reVC->callback_table->OpenFile_MainScm = REVCDetour_OpenFile_MainScm;
+        this->overrider.SetParams(file_overrider::params(true, true, true, true));
+        this->overrider.SetFileDetour(OpenFileDetourRE());
         return true;
     }
     else if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA())

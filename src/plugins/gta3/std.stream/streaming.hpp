@@ -11,6 +11,7 @@
 
 #include <modloader/modloader.hpp>
 #include <modloader/modloader_re3.h>
+#include <modloader/modloader_reVC.h>
 #include <modloader/util/hash.hpp>
 #include <modloader/util/injector.hpp>
 #include <modloader/util/container.hpp>
@@ -541,5 +542,6 @@ extern "C" void** pStreamingBuffer;
 extern "C" uint32_t* streamingBufferSize;
 extern "C" void(*LoadCdDirectory2)(const char*, int);
 extern modloader_re3_t* modloader_re3;
+extern modloader_reVC_t* modloader_reVC;
 
 #endif

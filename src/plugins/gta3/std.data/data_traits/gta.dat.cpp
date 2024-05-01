@@ -55,7 +55,7 @@ struct gtadat_traits : public data_traits
         static const char* datafile() // for readmes
         {
             if(gvm.IsSA()) return "gta.dat";
-            if(gvm.IsVC()) return "gta_vc.dat";
+            if(gvm.IsVC() || plugin_ptr->loader->game_id == MODLOADER_GAME_REVC) return "gta_vc.dat";
             if(gvm.IsIII() || plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) return "gta3.dat";
             return nullptr;
         }
@@ -351,7 +351,7 @@ public:
     }
 };
 
-using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+using OpenFileDetourRE = modloader::basic_file_detour<dtraits::OpenFile,
     OpenFileSB,
     int32_t, const char*, const char*>;
 
@@ -372,10 +372,27 @@ static auto xinit = initializer([](DataPlugin* plugin_ptr)
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
 
         plugin_ptr->modloader_re3->callback_table->OpenFile_GtaDat = plugin_ptr->RE3Detour_OpenFile_GtaDat;
-        plugin_ptr->gtadat_detour.SetFileDetour(OpenFileDetourRE3());
+        plugin_ptr->gtadat_detour.SetFileDetour(OpenFileDetourRE());
 
         plugin_ptr->modloader_re3->callback_table->OpenFile_DefaultDat = plugin_ptr->RE3Detour_OpenFile_DefaultDat;
-        plugin_ptr->defaultdat_detour.SetFileDetour(OpenFileDetourRE3());
+        plugin_ptr->defaultdat_detour.SetFileDetour(OpenFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->gtadat = modloader::hash(maindat);
+        plugin_ptr->defaultdat = modloader::hash("default.dat");
+
+        auto params = file_overrider::params(true, true, false, false);
+        plugin_ptr->gtadat_detour.SetParams(params);
+        plugin_ptr->defaultdat_detour.SetParams(params);
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+
+        plugin_ptr->modloader_reVC->callback_table->OpenFile_GtaDat = plugin_ptr->REVCDetour_OpenFile_GtaDat;
+        plugin_ptr->gtadat_detour.SetFileDetour(OpenFileDetourRE());
+
+        plugin_ptr->modloader_reVC->callback_table->OpenFile_DefaultDat = plugin_ptr->REVCDetour_OpenFile_DefaultDat;
+        plugin_ptr->defaultdat_detour.SetFileDetour(OpenFileDetourRE());
     }
     else if(!gvm.IsIII())
     {

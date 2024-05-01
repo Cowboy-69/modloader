@@ -15,6 +15,7 @@ using namespace injector;
 #include "gta3/vc/10.hpp"
 #include "gta3/3/10.hpp"
 #include "gta3/3/re3.hpp"
+#include "gta3/vc/reVC.hpp"
  
 // Constants
 static const size_t max_ptr_dist = 8;       // Max distance to take as a "equivalent" address for modloader
@@ -86,6 +87,10 @@ static void init(std::map<memory_pointer_raw, memory_pointer_raw>& map)
         if(modloader::plugin_ptr && modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
         {
             III_RE3(map);
+        }
+        else if (modloader::plugin_ptr && modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            VC_REVC(map);
         }
         else if(gvm.IsSA())
         {

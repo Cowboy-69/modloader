@@ -38,6 +38,7 @@ extern "C"
     CDirectory* clothesDirectory;
 
     modloader_re3_t* modloader_re3{};
+    modloader_reVC_t* modloader_reVC{};
 
     // Returns the file handle to be used for iModelBeingLoaded (called from Assembly)
     HANDLE CallGetAbstractHandle(HANDLE hFile)
@@ -148,7 +149,7 @@ int __stdcall CdStreamThread()
         pQueue = &cdinfo.queue;
         ppStreams = &cdinfo.pStreams;
     }
-    else if(gvm.IsVC() || gvm.IsIII() || plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    else if(gvm.IsVC() || gvm.IsIII() || plugin_ptr->loader->game_id == MODLOADER_GAME_RE3 || plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
     {
         pSemaphore = memory_pointer(xVc(0x6F76F4)).get<HANDLE>();
         pQueue = memory_pointer(xVc(0x6F7700)).get<Queue>();
@@ -244,7 +245,7 @@ int __stdcall CdStreamThread()
         // Cleanup
         if(bIsAbstract) streaming->CloseModel(sfile);
 
-        if(plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+        if(plugin_ptr->loader->game_id == MODLOADER_GAME_RE3 || plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
         {
             // no CdStream sync fix for RE3
             cd->nSectorsToRead = 0;
@@ -457,6 +458,8 @@ void CAbstractStreaming::LoadCdDirectory(std::function<void()> OriginalLoadCdDir
     // TODO should this be on Patch();
     if(plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
         LoadCdDirectory2 = modloader_re3->re3_addr_table->CStreaming__LoadCdDirectory2;
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        LoadCdDirectory2 = modloader_reVC->reVC_addr_table->CStreaming__LoadCdDirectory2;
     else
         LoadCdDirectory2 = ReadRelativeOffset(0x5B8310 + 1).get<void(const char*, int)>();
 
@@ -539,6 +542,14 @@ void CAbstractStreaming::Patch()
         modloader_re3 = (modloader_re3_t*) modloader_re3_shdata->p;
         assert(modloader_re3 != nullptr);
     }
+    else if(game_id == MODLOADER_GAME_REVC)
+    {
+        const auto* modloader_reVC_shdata = plugin_ptr->loader->FindSharedData("MODLOADER_REVC");
+        assert(modloader_reVC_shdata != nullptr);
+        assert(modloader_reVC_shdata->type == MODLOADER_SHDATA_POINTER);
+        modloader_reVC = (modloader_reVC_t*)modloader_reVC_shdata->p;
+        assert(modloader_reVC != nullptr);
+    }
 
     // Pointers that we should have before streaming initialization.
     pStreamCreateFlags  = memory_pointer(0x8E3FE0).get();
@@ -560,6 +571,17 @@ void CAbstractStreaming::Patch()
             return streaming->FetchCdDirectory(*streaming->fetch_to_cd_dir, filename, id);
         };
     }
+    else if(game_id == MODLOADER_GAME_REVC)
+    {
+        modloader_reVC->callback_table->LoadCdDirectory0 = +[] {
+            streaming->LoadCdDirectory(modloader_reVC->reVC_addr_table->CStreaming__LoadCdDirectory0);
+        };
+
+        modloader_reVC->callback_table->FetchCdDirectory = +[](const char* filename, int id) {
+            assert(streaming->fetch_to_cd_dir != nullptr);
+            return streaming->FetchCdDirectory(*streaming->fetch_to_cd_dir, filename, id);
+        };
+    }
     else
     {
         using sinit_hook = function_hooker<0x5B8E1B, void()>;
@@ -572,6 +594,8 @@ void CAbstractStreaming::Patch()
         // Making our our code for the stream thread would make things so much better
         if(game_id == MODLOADER_GAME_RE3)
             modloader_re3->callback_table->CdStreamThread = +[] { CdStreamThread(); };
+        else if(game_id == MODLOADER_GAME_REVC)
+            modloader_reVC->callback_table->CdStreamThread = +[] { CdStreamThread(); };
         else
             MakeJMP(0x406560, raw_ptr(CdStreamThread));
 
@@ -610,6 +634,10 @@ void CAbstractStreaming::Patch()
         {
             modloader_re3->callback_table->RegisterNextModelRead = RegisterNextModelRead;
         }
+        else if(game_id == MODLOADER_GAME_REVC)
+        {
+            modloader_reVC->callback_table->RegisterNextModelRead = RegisterNextModelRead;
+        }
 
         // We need to return a new hFile if the file is on disk
         if(gvm.IsSA())
@@ -628,6 +656,12 @@ void CAbstractStreaming::Patch()
         else if(game_id == MODLOADER_GAME_RE3)
         {
             modloader_re3->callback_table->AcquireNextModelFileHandle = +[] {
+                return CallGetAbstractHandle(INVALID_HANDLE_VALUE);
+            };
+        }
+        else if(game_id == MODLOADER_GAME_REVC)
+        {
+            modloader_reVC->callback_table->AcquireNextModelFileHandle = +[] {
                 return CallGetAbstractHandle(INVALID_HANDLE_VALUE);
             };
         }
@@ -667,6 +701,16 @@ void CAbstractStreaming::Patch()
                 return result;
             };
         }
+        else if(game_id == MODLOADER_GAME_REVC)
+        {
+            // TODO this hook can be simplified in REVC. Perhaps we just need a callback after CdStreamRead.
+            modloader_reVC->callback_table->CdStreamRead = +[](int32_t channel, void* buf, uint32_t sectorOffset, uint32_t sectorCount) {
+                iModelBeingLoaded = iNextModelBeingLoaded;
+                auto result = modloader_reVC->reVC_addr_table->CdStreamRead(channel, buf, sectorOffset, sectorCount);
+                iModelBeingLoaded = iNextModelBeingLoaded = -1;
+                return result;
+            };
+        }
     }
 
     // Special models
@@ -693,6 +737,13 @@ void CAbstractStreaming::Patch()
     else if(game_id == MODLOADER_GAME_RE3)
     {
         modloader_re3->callback_table->OnRequestSpecialModel = +[](id_t model_id, const char* model_name, uint32_t pos, uint32_t size)
+        {
+            return streaming->OnRequestSpecialModel(model_id, model_name, pos, size);
+        };
+    }
+    else if(game_id == MODLOADER_GAME_REVC)
+    {
+        modloader_reVC->callback_table->OnRequestSpecialModel = +[](id_t model_id, const char* model_name, uint32_t pos, uint32_t size)
         {
             return streaming->OnRequestSpecialModel(model_id, model_name, pos, size);
         };
@@ -851,6 +902,16 @@ void CAbstractStreaming::Patch()
         };
 
         modloader_re3->callback_table->GetCdStreamPath_Unsafe = +[](const char* filepath) {
+            return streaming->GetCdStreamPath(filepath);
+        };
+    }
+    else if(game_id == MODLOADER_GAME_REVC)
+    {
+        modloader_reVC->callback_table->GetCdDirectoryPath_Unsafe = +[](const char* filepath) {
+            return streaming->GetCdDirectoryPath(filepath);
+        };
+
+        modloader_reVC->callback_table->GetCdStreamPath_Unsafe = +[](const char* filepath) {
             return streaming->GetCdStreamPath(filepath);
         };
     }

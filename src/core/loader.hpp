@@ -557,6 +557,7 @@ class Loader : public modloader_t
         
         // Start or Shutdown the loader
         bool InitFromRE3(struct modloader_re3_t*);
+        bool InitFromREVC(struct modloader_reVC_t*);
         void Startup(uint8_t game_id);
         void Shutdown();
         

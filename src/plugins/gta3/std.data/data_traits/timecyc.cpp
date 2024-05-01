@@ -57,18 +57,26 @@ public:
     }
 };
 
-using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+using LoadFileDetourRE = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
     LoadFileSB,
     int, const char*, uint8_t*, int, const char*>;
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3){
         plugin_ptr->timecycdat = modloader::hash("timecyc.dat");
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         plugin_ptr->modloader_re3->callback_table->LoadFile_TimecycDat = plugin_ptr->RE3Detour_LoadFile_TimecycDat;
-        plugin_ptr->timecycdat_detour.SetFileDetour(LoadFileDetourRE3());
+        plugin_ptr->timecycdat_detour.SetFileDetour(LoadFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->timecycdat = modloader::hash("timecyc.dat");
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        plugin_ptr->modloader_reVC->callback_table->LoadFile_TimecycDat = plugin_ptr->REVCDetour_LoadFile_TimecycDat;
+        plugin_ptr->timecycdat_detour.SetFileDetour(LoadFileDetourRE());
     }
     else
     {

@@ -64,7 +64,8 @@ using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->cullzonedat = modloader::hash("cullzone.dat");
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;

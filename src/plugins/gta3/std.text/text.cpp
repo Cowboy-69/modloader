@@ -20,6 +20,7 @@ class TextPlugin : public modloader::basic_plugin
 {
     private:
         modloader_re3_t* modloader_re3{};
+        modloader_reVC_t* modloader_reVC{};
 
         modloader::fxt_manager fxt;                     // FXT Files Manager
 
@@ -56,7 +57,7 @@ const TextPlugin::info& TextPlugin::GetInfo()
     return xinfo;
 }
 
-const char* RegisterAndGetGxtFilePathRE3(const char* filepath)
+const char* RegisterAndGetGxtFilePathRE(const char* filepath)
 {
     std::string filepathString = static_cast<std::string>(filepath);
     auto filename = NormalizePath(filepathString.substr(GetLastPathComponent(filepathString)));
@@ -81,10 +82,19 @@ const char* RegisterAndGetGxtFilePathRE3(const char* filepath)
  */
 bool TextPlugin::OnStartup()
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3)
+    {
         text_plugin.modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         text_plugin.modloader_re3->callback_table->RegisterAndGetGxtFile_Unsafe = +[](const char* filepath) {
-            return RegisterAndGetGxtFilePathRE3(filepath);
+            return RegisterAndGetGxtFilePathRE(filepath);
+        };
+        return true;
+    }
+    else if (loader->game_id == MODLOADER_GAME_REVC)
+    {
+        text_plugin.modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        text_plugin.modloader_reVC->callback_table->RegisterAndGetGxtFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetGxtFilePathRE(filepath);
         };
         return true;
     }

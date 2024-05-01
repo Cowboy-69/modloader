@@ -22,6 +22,7 @@ class ScriptSpritesPlugin : public modloader::basic_plugin
 {
     private:
         modloader_re3_t* modloader_re3{};
+        modloader_reVC_t* modloader_reVC{};
 
     public:
         std::map<std::string, const modloader::file*> script_dicts;
@@ -52,7 +53,7 @@ const ScriptSpritesPlugin::info& ScriptSpritesPlugin::GetInfo()
 
 
 
-const char* RegisterAndGetSplashFilePathRE3(const char* filepath)
+const char* RegisterAndGetSplashFilePathRE(const char* filepath)
 {
     std::string filename = filepath;
     filename = &filepath[GetLastPathComponent(filename)];
@@ -77,10 +78,19 @@ const char* RegisterAndGetSplashFilePathRE3(const char* filepath)
  */
 bool ScriptSpritesPlugin::OnStartup()
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3)
+    {
         scr_spr_plugin.modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         scr_spr_plugin.modloader_re3->callback_table->RegisterAndGetSplashFile_Unsafe = +[](const char* filepath) {
-            return RegisterAndGetSplashFilePathRE3(filepath);
+            return RegisterAndGetSplashFilePathRE(filepath);
+        };
+        return true;
+    }
+    else if (loader->game_id == MODLOADER_GAME_REVC)
+    {
+        scr_spr_plugin.modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        scr_spr_plugin.modloader_reVC->callback_table->RegisterAndGetSplashFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetSplashFilePathRE(filepath);
         };
         return true;
     }

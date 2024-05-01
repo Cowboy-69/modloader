@@ -90,6 +90,24 @@ void CAbstractStreaming::DataPatch()
             return RegisterAndGetNonStreamedResPath(filepath, NonStreamedType::ColFile);
         };
     }
+    else if(plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        modloader_reVC->callback_table->RegisterAndGetAtomicFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetNonStreamedResPath(filepath, NonStreamedType::AtomicFile);
+        };
+
+        modloader_reVC->callback_table->RegisterAndGetClumpFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetNonStreamedResPath(filepath, NonStreamedType::ClumpFile);
+        };
+
+        modloader_reVC->callback_table->RegisterAndGetTexDiction_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetNonStreamedResPath(filepath, NonStreamedType::TexDictionary);
+        };
+
+        modloader_reVC->callback_table->RegisterAndGetColFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetNonStreamedResPath(filepath, NonStreamedType::ColFile);
+        };
+    }
 }
 
 

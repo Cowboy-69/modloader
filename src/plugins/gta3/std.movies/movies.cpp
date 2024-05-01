@@ -64,9 +64,13 @@ class MediaPlugin : public modloader::basic_plugin
         file_overrider titles_detour;
 
         modloader_re3_t* modloader_re3{};
+        modloader_reVC_t* modloader_reVC{};
 
         static void RE3Detour_PlayMovieInWindow_Logo(int, const char*);
         static void RE3Detour_PlayMovieInWindow_GTAtitles(int, const char*);
+
+        static void REVCDetour_PlayMovieInWindow_Logo(int, const char*);
+        static void REVCDetour_PlayMovieInWindow_GTAtitles(int, const char*);
 
     public:
         const info& GetInfo();
@@ -93,7 +97,7 @@ const MediaPlugin::info& MediaPlugin::GetInfo()
 }
 
 
-using CreateVideoPlayerDetourRE3 = modloader::basic_file_detour<dtraits::CreateVideoPlayer,
+using CreateVideoPlayerDetourRE = modloader::basic_file_detour<dtraits::CreateVideoPlayer,
     Test,
     void, int, const char*>;
 
@@ -129,6 +133,37 @@ void MediaPlugin::RE3Detour_PlayMovieInWindow_GTAtitles(int cmdshow, const char*
     return PlayMovieInWindow(cmdshow, filename);
 }
 
+void MediaPlugin::REVCDetour_PlayMovieInWindow_Logo(int cmdshow, const char* filename)
+{
+    const auto& modloader_reVC = *mpg_plugin.modloader_reVC;
+    const auto PlayMovieInWindow = modloader_reVC.reVC_addr_table->PlayMovieInWindow;
+
+    auto& logo_detour = mpg_plugin.logo_detour;
+    if(logo_detour.NumInjections() == 1)
+    {
+        const auto& test = static_cast<Test&>(logo_detour.GetInjection(0));
+        if(test.has_hooked())
+            return test.functor(PlayMovieInWindow, cmdshow, filename);
+    }
+
+    return PlayMovieInWindow(cmdshow, filename);
+}
+
+void MediaPlugin::REVCDetour_PlayMovieInWindow_GTAtitles(int cmdshow, const char* filename)
+{
+    const auto& modloader_reVC = *mpg_plugin.modloader_reVC;
+    const auto PlayMovieInWindow = modloader_reVC.reVC_addr_table->PlayMovieInWindow;
+    
+    auto& titles_detour = mpg_plugin.titles_detour;
+    if(titles_detour.NumInjections() == 1)
+    {
+        const auto& test = static_cast<Test&>(titles_detour.GetInjection(0));
+        if(test.has_hooked())
+            return test.functor(PlayMovieInWindow, cmdshow, filename);
+    }
+
+    return PlayMovieInWindow(cmdshow, filename);
+}
 
 /*
  *  MediaPlugin::OnStartup
@@ -136,7 +171,7 @@ void MediaPlugin::RE3Detour_PlayMovieInWindow_GTAtitles(int cmdshow, const char*
  */
 bool MediaPlugin::OnStartup()
 {
-    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3)
+    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
     {
         this->logo          = modloader::hash("logo.mpg");
         this->GTAtitles     = modloader::hash("gtatitles.mpg");
@@ -151,10 +186,20 @@ bool MediaPlugin::OnStartup()
             this->modloader_re3 = (modloader_re3_t*) loader->FindSharedData("MODLOADER_RE3")->p;
 
             modloader_re3->callback_table->PlayMovieInWindow_Logo = RE3Detour_PlayMovieInWindow_Logo;
-            logo_detour.SetFileDetour(CreateVideoPlayerDetourRE3());
+            logo_detour.SetFileDetour(CreateVideoPlayerDetourRE());
 
             modloader_re3->callback_table->PlayMovieInWindow_GTAtitles = RE3Detour_PlayMovieInWindow_GTAtitles;
-            titles_detour.SetFileDetour(CreateVideoPlayerDetourRE3());
+            titles_detour.SetFileDetour(CreateVideoPlayerDetourRE());
+        }
+        else if (loader->game_id == MODLOADER_GAME_REVC)
+        {
+            this->modloader_reVC = (modloader_reVC_t*)loader->FindSharedData("MODLOADER_REVC")->p;
+
+            modloader_reVC->callback_table->PlayMovieInWindow_Logo = REVCDetour_PlayMovieInWindow_Logo;
+            logo_detour.SetFileDetour(CreateVideoPlayerDetourRE());
+
+            modloader_reVC->callback_table->PlayMovieInWindow_GTAtitles = REVCDetour_PlayMovieInWindow_GTAtitles;
+            titles_detour.SetFileDetour(CreateVideoPlayerDetourRE());
         }
         else
         {

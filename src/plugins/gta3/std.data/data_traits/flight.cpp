@@ -57,13 +57,14 @@ public:
     }
 };
 
-using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+using LoadFileDetourRE = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
     LoadFileSB,
     int, const char*, uint8_t*, int, const char*>;
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->flightdat = modloader::hash("flight.dat");
         plugin_ptr->flight2dat = modloader::hash("flight2.dat");
         plugin_ptr->flight3dat = modloader::hash("flight3.dat");
@@ -72,16 +73,34 @@ static auto xinit = initializer([](DataPlugin* plugin_ptr)
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
 
         plugin_ptr->modloader_re3->callback_table->LoadFile_FlightDat = plugin_ptr->RE3Detour_LoadFile_FlightDat;
-        plugin_ptr->flightdat_detour.SetFileDetour(LoadFileDetourRE3());
+        plugin_ptr->flightdat_detour.SetFileDetour(LoadFileDetourRE());
 
         plugin_ptr->modloader_re3->callback_table->LoadFile_Flight2Dat = plugin_ptr->RE3Detour_LoadFile_Flight2Dat;
-        plugin_ptr->flight2dat_detour.SetFileDetour(LoadFileDetourRE3());
+        plugin_ptr->flight2dat_detour.SetFileDetour(LoadFileDetourRE());
 
         plugin_ptr->modloader_re3->callback_table->LoadFile_Flight3Dat = plugin_ptr->RE3Detour_LoadFile_Flight3Dat;
-        plugin_ptr->flight3dat_detour.SetFileDetour(LoadFileDetourRE3());
+        plugin_ptr->flight3dat_detour.SetFileDetour(LoadFileDetourRE());
 
         plugin_ptr->modloader_re3->callback_table->LoadFile_Flight4Dat = plugin_ptr->RE3Detour_LoadFile_Flight4Dat;
-        plugin_ptr->flight4dat_detour.SetFileDetour(LoadFileDetourRE3());
+        plugin_ptr->flight4dat_detour.SetFileDetour(LoadFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->flightdat = modloader::hash("flight.dat");
+        plugin_ptr->flight2dat = modloader::hash("flight2.dat");
+        plugin_ptr->flight3dat = modloader::hash("flight3.dat");
+        plugin_ptr->flight4dat = modloader::hash("flight4.dat");
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+
+        plugin_ptr->modloader_reVC->callback_table->LoadFile_FlightDat = plugin_ptr->REVCDetour_LoadFile_FlightDat;
+        plugin_ptr->flightdat_detour.SetFileDetour(LoadFileDetourRE());
+
+        plugin_ptr->modloader_reVC->callback_table->LoadFile_Flight2Dat = plugin_ptr->REVCDetour_LoadFile_Flight2Dat;
+        plugin_ptr->flight2dat_detour.SetFileDetour(LoadFileDetourRE());
+
+        plugin_ptr->modloader_reVC->callback_table->LoadFile_Flight3Dat = plugin_ptr->REVCDetour_LoadFile_Flight3Dat;
+        plugin_ptr->flight3dat_detour.SetFileDetour(LoadFileDetourRE());
     }
     else if(gvm.IsVC() || gvm.IsIII())
     {

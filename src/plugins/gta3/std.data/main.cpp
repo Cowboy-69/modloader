@@ -182,6 +182,86 @@ int32_t DataPlugin::RE3Detour_OpenFile_WaterproDat(const char* filename, const c
     return OpenFile0(filename, mode);
 }
 
+int32_t DataPlugin::REVCDetour_OpenFile_GtaDat(const char* filename, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto OpenFile0 = modloader_reVC.reVC_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.gtadat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::REVCDetour_OpenFile_DefaultDat(const char* filename, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto OpenFile0 = modloader_reVC.reVC_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.defaultdat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::REVCDetour_OpenFile_CarcolsDat(const char* filename, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto OpenFile0 = modloader_reVC.reVC_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.carcolsdat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::REVCDetour_OpenFile_PedGrpDat(const char* filename, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto OpenFile0 = modloader_reVC.reVC_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.pedgrpdat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
+int32_t DataPlugin::REVCDetour_OpenFile_WaterproDat(const char* filename, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto OpenFile0 = modloader_reVC.reVC_addr_table->CFileMgr_OpenFile;
+
+    auto& base_detour = dataplugin.waterprodat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& openFileDetour = static_cast<OpenFileSB&>(base_detour.GetInjection(0));
+        if (openFileDetour.has_hooked())
+            return openFileDetour.functor(OpenFile0, filename, mode);
+    }
+
+    return OpenFile0(filename, mode);
+}
+
 class LoadFileSB : public injector::scoped_base
 {
 public:
@@ -482,6 +562,247 @@ void DataPlugin::RE3Detour_InitialiseGame()
     }
 }
 
+int DataPlugin::REVCDetour_LoadFile_FistfiteDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.fistfitedat_detour;
+    if(base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_HandlingCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.handlingcfg_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_PedDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.peddat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_ObjectDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    dataplugin.has_model_info = true;
+
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.objectdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_PedStatsDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.pedstatsdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_WeaponDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.weapondat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_ParticleCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.particlecfg_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_SurfaceDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.surfacedat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_TimecycDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.timecycdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_FlightDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flightdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_Flight2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flight2dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_Flight3Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.flight3dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_TracksDat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.tracksdat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+int DataPlugin::REVCDetour_LoadFile_Tracks2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode)
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto LoadFile0 = modloader_reVC.reVC_addr_table->CFileMgr_LoadFile;
+
+    auto& base_detour = dataplugin.tracks2dat_detour;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& loadFileDetour = static_cast<LoadFileSB&>(base_detour.GetInjection(0));
+        if (loadFileDetour.has_hooked())
+            return loadFileDetour.functor(LoadFile0, filename, buf, maxlen, mode);
+    }
+
+    return LoadFile0(filename, buf, maxlen, mode);
+}
+
+void DataPlugin::REVCDetour_InitialiseGame()
+{
+    const auto& modloader_reVC = *dataplugin.modloader_reVC;
+    const auto InitialiseGame0 = modloader_reVC.reVC_addr_table->InitialiseGame;
+    InitialiseGame0();
+
+    dataplugin.cache.DeleteUnusedCaches();
+
+    if (dataplugin.changed_readme_data)
+    {
+        if (!dataplugin.maybe_readme.empty() || dataplugin.had_cached_readme)
+            dataplugin.WriteReadmeCache();
+    }
+}
+
 
 /*
  *  DataPlugin::OnStartup
@@ -491,14 +812,22 @@ bool DataPlugin::OnStartup()
 {
     void* p = mem_ptr(0x748CFB).get<void>();
 
-    if( gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3)
+    if( gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
     {
         this->readme_magics.reserve(20);
 
-        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+        {
             modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
             modloader_re3->callback_table->InitialiseGame = +[] {
                 RE3Detour_InitialiseGame();
+            };
+        }
+        else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+            modloader_reVC->callback_table->InitialiseGame = +[] {
+                REVCDetour_InitialiseGame();
             };
         }
 
@@ -517,9 +846,12 @@ bool DataPlugin::OnStartup()
         // Makes default.dat/gta.dat load in a lazy way
         LazyGtaDatPatch();
 
-        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
-            // Moved to DataPlugin::RE3Detour_LoadFile_ObjectDat
-        } else {
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
+        {
+            // Moved to DataPlugin::RE3Detour_LoadFile_ObjectDat and DataPlugin::REVCDetour_LoadFile_ObjectDat
+        }
+        else
+        {
             // Hook allowing us to know when we are ready to know about the model names of the game
             using modelinfo_hook =  function_hooker<0x5B925F, void(const char*)>;
             make_static_hook<modelinfo_hook>([this](modelinfo_hook::func_type CObjectData__Initialise, const char* p)
@@ -529,9 +861,12 @@ bool DataPlugin::OnStartup()
             });
         }
 
-        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
-            // Moved to DataPlugin::RE3Detour_InitialiseGame
-        } else {
+        if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
+        {
+            // Moved to DataPlugin::RE3Detour_InitialiseGame and DataPlugin::REVCDetour_InitialiseGame
+        }
+        else
+        {
             // Hook after the loading screen to write a readme cache
             using initialise_hook = injector::function_hooker<0x748CFB, void()>;
             make_static_hook<initialise_hook>([this](initialise_hook::func_type InitialiseGame)
@@ -573,7 +908,8 @@ bool DataPlugin::OnShutdown()
  */
 int DataPlugin::GetBehaviour(modloader::file& file)
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
+    {
         if(!file.is_dir())
         {
             if(file.hash == gtadat)
@@ -777,7 +1113,8 @@ int DataPlugin::GetBehaviour(modloader::file& file)
  */
 bool DataPlugin::InstallFile(const modloader::file& file)
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
+    {
         if (file.behaviour == gtadat)
         {
             return gtadat_detour.InstallFile(file);
@@ -911,7 +1248,8 @@ bool DataPlugin::InstallFile(const modloader::file& file)
  */
 bool DataPlugin::ReinstallFile(const modloader::file& file)
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
+    {
         if (file.behaviour == gtadat) {
             return gtadat_detour.ReinstallFile();
         }
@@ -1041,7 +1379,8 @@ bool DataPlugin::ReinstallFile(const modloader::file& file)
  */
 bool DataPlugin::UninstallFile(const modloader::file& file)
 {
-    if (loader->game_id == MODLOADER_GAME_RE3) {
+    if (loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
+    {
         if (file.behaviour == gtadat)
         {
             return gtadat_detour.UninstallFile();

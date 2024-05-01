@@ -310,7 +310,7 @@ namespace datalib {
 
 static std::function<void()> MakeIdeReloader();
 
-const char* RegisterAndGetIdeFilePathRE3(const char* filepath)
+const char* RegisterAndGetIdeFilePathRE(const char* filepath)
 {
     static std::string static_result;
 
@@ -333,12 +333,22 @@ const char* RegisterAndGetIdeFilePathRE3(const char* filepath)
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
     // IDE Merger
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->AddBehv(modloader::hash(ide_merger_name), true);
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         plugin_ptr->modloader_re3->callback_table->RegisterAndGetIdeFile_Unsafe = +[](const char* filepath) {
-            return RegisterAndGetIdeFilePathRE3(filepath);
+            return RegisterAndGetIdeFilePathRE(filepath);
+        };
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->AddBehv(modloader::hash(ide_merger_name), true);
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        plugin_ptr->modloader_reVC->callback_table->RegisterAndGetIdeFile_Unsafe = +[](const char* filepath) {
+            return RegisterAndGetIdeFilePathRE(filepath);
         };
     }
     else if(gvm.IsSA())

@@ -188,7 +188,7 @@ public:
     }
 };
 
-using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+using OpenFileDetourRE = modloader::basic_file_detour<dtraits::OpenFile,
     OpenFileSB,
     int32_t, const char*, const char*>;
 
@@ -197,13 +197,24 @@ static void initialise(DataPlugin* plugin_ptr, std::function<void()> refresher)
 {
     using store_type = xxxgrp_store<Traits>;
 
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->pedgrpdat = modloader::hash("pedgrp.dat");
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         plugin_ptr->modloader_re3->callback_table->OpenFile_PedGrpDat = plugin_ptr->RE3Detour_OpenFile_PedGrpDat;
-        plugin_ptr->pedgrpdat_detour.SetFileDetour(OpenFileDetourRE3());
-    } else {
+        plugin_ptr->pedgrpdat_detour.SetFileDetour(OpenFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->pedgrpdat = modloader::hash("pedgrp.dat");
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        plugin_ptr->modloader_reVC->callback_table->OpenFile_PedGrpDat = plugin_ptr->REVCDetour_OpenFile_PedGrpDat;
+        plugin_ptr->pedgrpdat_detour.SetFileDetour(OpenFileDetourRE());
+    }
+    else
+    {
         plugin_ptr->AddMerger<store_type>(Traits::dtraits::datafile(), true, false, false, reinstall_since_load, refresher);
     }
 }

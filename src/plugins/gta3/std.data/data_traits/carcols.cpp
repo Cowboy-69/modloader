@@ -157,20 +157,31 @@ public:
     }
 };
 
-using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
+using OpenFileDetourRE = modloader::basic_file_detour<dtraits::OpenFile,
     OpenFileSB,
     int32_t, const char*, const char*>;
 
 // Vehicle Colours Merger
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->carcolsdat = modloader::hash("carcols.dat");
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         plugin_ptr->modloader_re3->callback_table->OpenFile_CarcolsDat = plugin_ptr->RE3Detour_OpenFile_CarcolsDat;
-        plugin_ptr->carcolsdat_detour.SetFileDetour(OpenFileDetourRE3());
-    } else {
+        plugin_ptr->carcolsdat_detour.SetFileDetour(OpenFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->carcolsdat = modloader::hash("carcols.dat");
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        plugin_ptr->modloader_reVC->callback_table->OpenFile_CarcolsDat = plugin_ptr->REVCDetour_OpenFile_CarcolsDat;
+        plugin_ptr->carcolsdat_detour.SetFileDetour(OpenFileDetourRE());
+    }
+    else
+    {
         auto ReloadColours = injector::cstd<void()>::call<0x5B6890>;
         plugin_ptr->AddMerger<carcols_store>("carcols.dat", true, false, false, reinstall_since_load, gdir_refresh(ReloadColours));
     }

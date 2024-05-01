@@ -6,6 +6,7 @@
 #include <stdinc.hpp>
 #include "loader.hpp"
 #include <modloader/modloader_re3.h>
+#include <modloader/modloader_reVC.h>
 #include <unicode.hpp>
 using namespace modloader;
 
@@ -31,10 +32,14 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     if(fdwReason == DLL_PROCESS_ATTACH)
     {
         char szEnvVarBuffer[8];
-        const auto dwEnvVarLength = GetEnvironmentVariableA("MODLOADER_RE3", szEnvVarBuffer, sizeof(szEnvVarBuffer));
+        auto dwEnvVarLength = GetEnvironmentVariableA("MODLOADER_RE3", szEnvVarBuffer, sizeof(szEnvVarBuffer));
+
+        if (dwEnvVarLength == 0 || dwEnvVarLength >= sizeof(szEnvVarBuffer) || strcmp(szEnvVarBuffer, "1"))
+            dwEnvVarLength = GetEnvironmentVariableA("MODLOADER_REVC", szEnvVarBuffer, sizeof(szEnvVarBuffer));
+
         if(dwEnvVarLength != 0 && dwEnvVarLength < sizeof(szEnvVarBuffer) && !strcmp(szEnvVarBuffer, "1"))
         {
-            // Just wait for modloader_InitFromRE3 to be called
+            // Just wait for modloader_InitFromRE3 or modloader_InitFromREVC to be called
         }
         else
         {
@@ -88,6 +93,53 @@ bool Loader::InitFromRE3(modloader_re3_t* modloader_re3_share)
     this->p_gGameState = modloader_re3_share->re3_addr_table->p_gGameState;
     
     this->Startup(MODLOADER_GAME_RE3);
+
+    return true;
+}
+
+extern "C" int __declspec(dllexport) modloader_InitFromREVC(modloader_reVC_t* modloader_reVC_share)
+{
+    return loader.InitFromREVC(modloader_reVC_share) != 0;
+}
+
+bool Loader::InitFromREVC(modloader_reVC_t* modloader_reVC_share)
+{
+    // TODO check modloader_reVC_share->size and substructs size
+    // TODO check modloader_reVC_share->reVC_version?
+
+    assert(modloader_reVC_share != nullptr);
+
+    auto& gvm = injector::address_manager::singleton();
+    gvm.set_name("Mod Loader");
+
+    // TODO InstallExceptionCatcher? maybe unecessary?
+
+    // TODO non-static
+    static modloader_reVC_callback_table_t callback_table;
+    callback_table.size = sizeof(callback_table);
+
+    modloader_reVC_share->modloader = &loader;
+    modloader_reVC_share->callback_table = &callback_table;
+    assert(modloader_reVC_share->reVC_addr_table != nullptr);
+
+    modloader_reVC_share->Tick = +[](modloader_reVC_t* modloader_reVC_share) {
+        static_cast<Loader*>(modloader_reVC_share->modloader)->Tick();
+    };
+
+    modloader_reVC_share->Shutdown = +[](modloader_reVC_t* modloader_reVC_share) {
+        static_cast<Loader*>(modloader_reVC_share->modloader)->Shutdown();
+    };
+
+    // TODO I don't think creating the shared data before startup is a good idea
+    // but we need that before the plugins start patching stuff
+    modloader_shdata_t* plugin_shdata = this->CreateSharedData("MODLOADER_REVC");
+    plugin_shdata->type = MODLOADER_SHDATA_POINTER;
+    plugin_shdata->p = modloader_reVC_share;
+
+    // TODO this should probably go somewhere else too
+    this->p_gGameState = modloader_reVC_share->reVC_addr_table->p_gGameState;
+    
+    this->Startup(MODLOADER_GAME_REVC);
 
     return true;
 }

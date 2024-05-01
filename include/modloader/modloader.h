@@ -158,6 +158,7 @@ typedef void (*modloader_fError)(const char* errmsg, ...);
 #define MODLOADER_GAME_VC    2
 #define MODLOADER_GAME_SA    3
 #define MODLOADER_GAME_RE3   (MODLOADER_GAME_III | MODLOADER_GAME_REBIT)
+#define MODLOADER_GAME_REVC   (MODLOADER_GAME_VC | MODLOADER_GAME_REBIT)
 
 /* ---- Interface ---- */
 typedef struct modloader_t

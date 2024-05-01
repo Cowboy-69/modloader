@@ -51,7 +51,7 @@ using maybe_readable = maybe<maybe<StoreType>>;
 class DataPlugin : public modloader::basic_plugin
 {
     public: // Mod Loader Callbacks
-        // re3 stuff
+        // re3/reVC stuff
         uint32_t gtadat; // Hash for gta3.dat
         uint32_t defaultdat; // Hash for default.dat
         uint32_t carcolsdat; // Hash for carcols.dat
@@ -97,7 +97,9 @@ class DataPlugin : public modloader::basic_plugin
         std::map<std::string, const modloader::file*> ideFiles;
         std::map<std::string, const modloader::file*> iplFiles;
         modloader_re3_t* modloader_re3{};
+        modloader_reVC_t* modloader_reVC{};
 
+        // re3
         static int32_t RE3Detour_OpenFile_GtaDat(const char* filename, const char* mode);
         static int32_t RE3Detour_OpenFile_DefaultDat(const char* filename, const char* mode);
         static int32_t RE3Detour_OpenFile_CarcolsDat(const char* filename, const char* mode);
@@ -120,6 +122,28 @@ class DataPlugin : public modloader::basic_plugin
         static int RE3Detour_LoadFile_TracksDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
         static int RE3Detour_LoadFile_Tracks2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
         static void RE3Detour_InitialiseGame();
+        
+        // reVC
+        static int32_t REVCDetour_OpenFile_GtaDat(const char* filename, const char* mode);
+        static int32_t REVCDetour_OpenFile_DefaultDat(const char* filename, const char* mode);
+        static int32_t REVCDetour_OpenFile_CarcolsDat(const char* filename, const char* mode);
+        static int32_t REVCDetour_OpenFile_PedGrpDat(const char* filename, const char* mode);
+        static int32_t REVCDetour_OpenFile_WaterproDat(const char* filename, const char* mode);
+        static int REVCDetour_LoadFile_FistfiteDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_HandlingCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_PedDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_ObjectDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_PedStatsDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_WeaponDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_ParticleCfg(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_SurfaceDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_TimecycDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_FlightDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_Flight2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_Flight3Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_TracksDat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static int REVCDetour_LoadFile_Tracks2Dat(const char* filename, uint8_t* buf, int maxlen, const char* mode);
+        static void REVCDetour_InitialiseGame();
 
         friend void ProcessGtaDatEntries();
 

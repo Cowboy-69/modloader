@@ -18,13 +18,18 @@ static bool ShouldIgnoreFile(const modloader::file&);
 class ThePlugin : public modloader::basic_plugin
 {
     private:
-        // re3 stuff
+        // re3/reVC stuff
         modloader_re3_t* modloader_re3{};
+        modloader_reVC_t* modloader_reVC{};
         static int32_t RE3Detour_OpenFile_PedIfp(const char*, const char*);
+        static void* REVCDetour_RwStreamOpen_AnimFile(int32_t type, int32_t accessType, const char* pData);
 
         file_overrider ov_ped_ifp;
 
     public:
+        // reVC stuff
+        const modloader::file* pedifp_file;
+
         const info& GetInfo();
         bool OnStartup();
         bool OnShutdown();
@@ -90,9 +95,52 @@ public:
     }
 };
 
+class RwStreamOpenSB : public injector::scoped_base
+{
+public:
+    using func_type = std::function<void*(int, int, const char*)>;
+    using functor_type = std::function<void*(func_type, int&, int&, const char*&)>;
+
+    functor_type functor;
+
+    RwStreamOpenSB() = default;
+    RwStreamOpenSB(const RwStreamOpenSB&) = delete;
+    RwStreamOpenSB(RwStreamOpenSB&& rhs) : functor(std::move(rhs.functor)) {}
+    RwStreamOpenSB& operator=(const RwStreamOpenSB&) = delete;
+    RwStreamOpenSB& operator=(RwStreamOpenSB&& rhs) { functor = std::move(rhs.functor); }
+
+    virtual ~RwStreamOpenSB()
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>dtor");
+        restore();
+    }
+
+    void make_call(functor_type functor)
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>make_call");
+        this->functor = std::move(functor);
+    }
+
+    bool has_hooked() const
+    {
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>has_hooked");
+        return !!functor;
+    }
+
+    void restore() override
+    {
+        this->functor = nullptr;
+        plugin_ptr->loader->Log(">>>>>>>>>>>>>restore");
+    }
+};
+
 using OpenFileDetourRE3 = modloader::basic_file_detour<dtraits::OpenFile,
     OpenFileSB,
     int32_t, const char*, const char*>;
+
+using RwStreamOpenDetourREVC = modloader::basic_file_detour<dtraits::RwStreamOpen,
+    RwStreamOpenSB,
+    void*, int, int, const char*>;
 
 int32_t ThePlugin::RE3Detour_OpenFile_PedIfp(const char* filename, const char* mode)
 {
@@ -110,13 +158,29 @@ int32_t ThePlugin::RE3Detour_OpenFile_PedIfp(const char* filename, const char* m
     return OpenFile0(filename, mode);
 }
 
+void* ThePlugin::REVCDetour_RwStreamOpen_AnimFile(int32_t type, int32_t accessType, const char* pData)
+{
+    const auto& modloader_reVC = *the_plugin.modloader_reVC;
+    const auto RwStreamOpen0 = modloader_reVC.reVC_addr_table->RwStreamOpen;
+
+    auto& base_detour = the_plugin.ov_ped_ifp;
+    if (base_detour.NumInjections() == 1)
+    {
+        const auto& rwStreamOpenDetour = static_cast<RwStreamOpenSB&>(base_detour.GetInjection(0));
+        if (rwStreamOpenDetour.has_hooked())
+            return rwStreamOpenDetour.functor(RwStreamOpen0, type, accessType, pData);
+    }
+
+    return RwStreamOpen0(type, accessType, pData);
+}
+
 /*
  *  ThePlugin::OnStartup
  *      Startups the plugin
  */
 bool ThePlugin::OnStartup()
 {
-    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3)
+    if(gvm.IsIII() || gvm.IsVC() || gvm.IsSA() || loader->game_id == MODLOADER_GAME_RE3 || loader->game_id == MODLOADER_GAME_REVC)
     {
         // Setup abstract streaming
         streaming = new CAbstractStreaming();
@@ -130,6 +194,13 @@ bool ThePlugin::OnStartup()
             modloader_re3->callback_table->OpenFile_PedIfp = RE3Detour_OpenFile_PedIfp;
             ov_ped_ifp.SetParams(file_overrider::params(nullptr));
             ov_ped_ifp.SetFileDetour(OpenFileDetourRE3());
+        }
+        else if (loader->game_id == MODLOADER_GAME_REVC)
+        {
+            modloader_reVC = (modloader_reVC_t*)loader->FindSharedData("MODLOADER_REVC")->p;
+            modloader_reVC->callback_table->RwStreamOpen_AnimFile = REVCDetour_RwStreamOpen_AnimFile;
+            ov_ped_ifp.SetParams(file_overrider::params(nullptr));
+            ov_ped_ifp.SetFileDetour(RwStreamOpenDetourREVC());
         }
         else if(gvm.IsIII())
         {
@@ -251,7 +322,12 @@ int ThePlugin::GetBehaviour(modloader::file& file)
 bool ThePlugin::InstallFile(const modloader::file& file)
 {
     if(file.behaviour & is_item_mask) return streaming->InstallFile(file);
-    if(file.behaviour & is_pedifp_mask) return ov_ped_ifp.InstallFile(file);
+
+    if(file.behaviour & is_pedifp_mask) {
+        pedifp_file = &file;
+        return ov_ped_ifp.InstallFile(file);
+    }
+
     if(file.behaviour & is_img_file_mask) return streaming->AddImgFile(file);
     return false;
 }
@@ -299,7 +375,7 @@ void ThePlugin::Update()
 bool ShouldIgnoreFile(const modloader::file& file)
 {
     // All this bullshit happens only in VC.
-    if(!gvm.IsVC())
+    if(!gvm.IsVC() && !plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
         return false;
 
     if(file.is_dir())

@@ -4,3 +4,4 @@
 #include <stdinc/stdinc.hpp>
 #include <modloader/gta3/gta3.hpp>
 #include <modloader/modloader_re3.h>
+#include <modloader/modloader_reVC.h>

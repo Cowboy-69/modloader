@@ -79,19 +79,29 @@ public:
     }
 };
 
-using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+using LoadFileDetourRE = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
     LoadFileSB,
     int, const char*, uint8_t*, int, const char*>;
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->pedstatsdat = modloader::hash("pedstats.dat");
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         plugin_ptr->modloader_re3->callback_table->LoadFile_PedStatsDat = plugin_ptr->RE3Detour_LoadFile_PedStatsDat;
-        plugin_ptr->pedstatsdat_detour.SetFileDetour(LoadFileDetourRE3());
-    } else {
+        plugin_ptr->pedstatsdat_detour.SetFileDetour(LoadFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->pedstatsdat = modloader::hash("pedstats.dat");
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        plugin_ptr->modloader_reVC->callback_table->LoadFile_PedStatsDat = plugin_ptr->REVCDetour_LoadFile_PedStatsDat;
+        plugin_ptr->pedstatsdat_detour.SetFileDetour(LoadFileDetourRE());
+    }
+    else {
         auto ReloadPedStats = injector::cstd<void()>::call<0x5BB890>;
         plugin_ptr->AddMerger<pedstats_store>("pedstats.dat", true, false, false, reinstall_since_start, gdir_refresh(ReloadPedStats));
     }

@@ -128,19 +128,30 @@ public:
     }
 };
 
-using LoadFileDetourRE3 = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
+using LoadFileDetourRE = modloader::basic_file_detour<dtraits::SaOpenOr3VcLoadFileDetour,
     LoadFileSB,
     int, const char*, uint8_t*, int, const char*>;
 
 static auto xinit = initializer([](DataPlugin* plugin_ptr)
 {
-    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3) {
+    if (plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+    {
         plugin_ptr->peddat = modloader::hash("ped.dat");
 
         plugin_ptr->modloader_re3 = (modloader_re3_t*)plugin_ptr->loader->FindSharedData("MODLOADER_RE3")->p;
         plugin_ptr->modloader_re3->callback_table->LoadFile_PedDat = plugin_ptr->RE3Detour_LoadFile_PedDat;
-        plugin_ptr->peddat_detour.SetFileDetour(LoadFileDetourRE3());
-    } else {
+        plugin_ptr->peddat_detour.SetFileDetour(LoadFileDetourRE());
+    }
+    else if (plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+    {
+        plugin_ptr->peddat = modloader::hash("ped.dat");
+
+        plugin_ptr->modloader_reVC = (modloader_reVC_t*)plugin_ptr->loader->FindSharedData("MODLOADER_REVC")->p;
+        plugin_ptr->modloader_reVC->callback_table->LoadFile_PedDat = plugin_ptr->REVCDetour_LoadFile_PedDat;
+        plugin_ptr->peddat_detour.SetFileDetour(LoadFileDetourRE());
+    }
+    else
+    {
         auto ReloadPedRelationship = [] {}; // refreshing ped relationship during gameplay might break save game, don't do it at all
         plugin_ptr->AddMerger<ped_store>("ped.dat", true, false, false, reinstall_since_load, gdir_refresh(ReloadPedRelationship));
     }

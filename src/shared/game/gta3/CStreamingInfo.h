@@ -74,6 +74,8 @@ struct CStreamingInfo
     {
         if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
             return sizeof(CStreamingInfoIII);
+        else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+            return sizeof(CStreamingInfoVC);
         switch(modloader::gvm.GetGame())
         {
             case '3': return sizeof(CStreamingInfoIII);
@@ -89,6 +91,10 @@ struct CStreamingInfo
         if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
         {
             this->AsIII().uiBlockOffset = offset; this->AsIII().uiBlockCount = blocks; return;
+        }
+        if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            this->AsVC().uiBlockOffset = offset; this->AsVC().uiBlockCount = blocks; return;
         }
         switch(modloader::gvm.GetGame())
         {
@@ -113,6 +119,10 @@ struct CStreamingInfo
             {
                 this->AsIII().usNextOnCd = nextOnCd; return;
             }
+            else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+            {
+                this->AsVC().usNextOnCd = nextOnCd; return;
+            }
             switch(modloader::gvm.GetGame())
             {
                 case '3': this->AsIII().usNextOnCd = nextOnCd; return;
@@ -129,6 +139,10 @@ struct CStreamingInfo
         {
             this->AsIII().ucFlags = 0; return;
         }
+        else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            this->AsVC().ucFlags = 0; return;
+        }
         switch(modloader::gvm.GetGame())
         {
             case '3': this->AsIII().ucFlags = 0; return;
@@ -143,6 +157,10 @@ struct CStreamingInfo
         if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
         {
             return this->AsIII().ucFlags;
+        }
+        else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            return this->AsVC().ucFlags;
         }
         switch(modloader::gvm.GetGame())
         {
@@ -159,6 +177,10 @@ struct CStreamingInfo
         if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
         {
             return this->AsIII().ucLoadState;
+        }
+        else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            return this->AsVC().ucLoadState;
         }
         switch(modloader::gvm.GetGame())
         {
@@ -182,6 +204,10 @@ struct CStreamingInfo
             {
                 return this->AsIII().usNextOnCd;
             }
+            else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+            {
+                return this->AsVC().usNextOnCd;
+            }
             switch(modloader::gvm.GetGame())
             {
                 case '3': return this->AsIII().usNextOnCd;
@@ -199,6 +225,10 @@ struct CStreamingInfo
         {
             return this->AsIII().uiBlockOffset;
         }
+        else if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
+        {
+            return this->AsVC().uiBlockOffset;
+        }
         switch(modloader::gvm.GetGame())
         {
             case '3': return this->AsIII().uiBlockOffset;
@@ -211,7 +241,7 @@ struct CStreamingInfo
 
     uint8_t GetImgId()
     {
-        if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3)
+        if(modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_RE3 || modloader::plugin_ptr->loader->game_id == MODLOADER_GAME_REVC)
         {
             return 0;
         }
